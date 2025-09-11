@@ -428,7 +428,7 @@ class MainWindow(QMainWindow):
             self.setStyleSheet(qss)
             
             # Set window properties for modern look
-            self.setWindowTitle("RenLocalizer V2 - Professional Ren'Py Translation Tool")
+            self.setWindowTitle("RenLocalizer v2.0.1 - Professional Ren'Py Translation Tool")
             
             self.logger.info(f"Applied {self.current_theme} theme successfully")
             
@@ -596,18 +596,24 @@ class MainWindow(QMainWindow):
     def scan_directory(self):
         """Scan directory for .rpy files."""
         if not self.current_directory or not self.current_directory.exists():
+            print("DEBUG: No directory or directory doesn't exist")
             return
         
         try:
+            print(f"DEBUG: Starting scan of {self.current_directory}")
             self.status_label.setText(self.config_manager.get_ui_text("scanning_directory"))
             
             # Check if we should use parallel processing
             rpy_files = list(self.current_directory.rglob('*.rpy'))
             use_parallel = len(rpy_files) > 10  # Use parallel for 10+ files
             
+            print(f"DEBUG: Found {len(rpy_files)} .rpy files, use_parallel={use_parallel}")
+            
             if use_parallel:
                 self.status_label.setText(f"Scanning {len(rpy_files)} files (parallel mode)...")
                 max_workers = self.parser_workers_spin.value()
+                
+                print(f"DEBUG: Using parallel processing with {max_workers} workers")
                 
                 # Use parallel processing for large projects
                 extracted_data = self.parser.extract_from_directory_parallel(
@@ -615,6 +621,8 @@ class MainWindow(QMainWindow):
                     recursive=True, 
                     max_workers=max_workers
                 )
+                
+                print(f"DEBUG: Parallel extraction returned {len(extracted_data)} files")
                 
                 # Convert to MainWindow format
                 self.extracted_texts = []
@@ -630,8 +638,11 @@ class MainWindow(QMainWindow):
                         }
                         self.extracted_texts.append(text_data)
             else:
+                print("DEBUG: Using sequential processing")
                 # Use standard processing for small projects
                 self.extracted_texts = self.parser.parse_directory(self.current_directory)
+            
+            print(f"DEBUG: Total extracted texts: {len(self.extracted_texts)}")
             
             # Update extracted texts tree
             self.update_extracted_texts_tree()
@@ -650,6 +661,7 @@ class MainWindow(QMainWindow):
     
     def update_extracted_texts_tree(self):
         """Update the extracted texts tree."""
+        print(f"DEBUG: update_extracted_texts_tree called with {len(self.extracted_texts)} texts")
         self.extracted_tree.clear()
         
         for text_data in self.extracted_texts:
@@ -660,6 +672,8 @@ class MainWindow(QMainWindow):
                 str(text_data['line_number'])
             ])
             self.extracted_tree.addTopLevelItem(item)
+        
+        print(f"DEBUG: Added {self.extracted_tree.topLevelItemCount()} items to tree")
     
     def start_translation(self):
         """Start the translation process."""

@@ -1,41 +1,36 @@
 > ⚠️ **Warning (English)**: This project has been assisted by AI. It may contain mistakes, incomplete implementations and is still under active development. It is NOT a final release.
-> ⚠️ **Uyarı (Türkçe)**: Bu proje yapay zeka desteğiyle hazırlanmıştır; hatalar ve eksikler içerebilir, halen geliştirme aşamasındadır ve nihai sürüm değildir.
 
-# RenLocalizer V2
+# RenLocalizer
 
-[English] | [Türkçe README](./README.tr.md)
+**RenLocalizer** is a modern desktop application designed to automatically translate Ren'Py visual novel (.rpy) files with high accuracy and performance. Features multiple translation engines, smart text filtering, and a professional user interface.
 
-![License](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)
+## ✨ Key Features
 
-**RenLocalizer V2** is a high-performance desktop application built to automatically translate Ren'Py visual novel (.rpy) files with multiple translation engines. It offers automatic proxy rotation, batch translation, smart filtering, and a modern interface.
+### 🎯 Smart Translation
+- **Multiple engines**: Google Translate (web), DeepL API support
+- **RenPy-aware parsing**: Correctly handles menu choices, dialogues, UI elements
+- **Conditional menu support**: Handles `"choice" if condition:` syntax
+- **Technical filtering**: Automatically excludes color codes, font files, performance metrics
+- **Character preservation**: Maintains `[character_name]` variables and placeholders
 
-## ✨ Features
-
-### 🚀 High Performance
-- **Implemented engines**: Google (web), DeepL (API)
-- **Planned**: Bing (Microsoft), Yandex, LibreTranslator
-- **Concurrent execution**: Up to 256 in UI (core currently ~32 active slots)
-- **Batch translation**: Configurable up to 2000
-- **Proxy rotation**: Multi-source + validation
-- **Smart fallback**: Google path falls back to direct requests if proxy/aiohttp fails
+### 🚀 High Performance  
+- **Concurrent processing**: Configurable thread count (1-256)
+- **Batch translation**: Process multiple texts together (1-2000)
+- **Proxy rotation**: Automatic proxy management and validation
+- **Smart fallback**: Falls back to direct requests if proxies fail
+- **Rate limiting**: Adaptive delays to prevent blocking
 
 ### 🎨 Modern Interface
 - **Professional themes**: Dark, Light, Solarized, Eye-friendly
-- **Real-time monitoring**: Live speed, progress, status
-- **Two language UI**: English & Turkish
-- **Auto-save**: Timestamped output folders
+- **Real-time monitoring**: Live translation progress and statistics
+- **Bilingual UI**: English and Turkish interface support
+- **Auto-save**: Timestamped output with proper RenPy structure
 
-### 🔧 Smart Processing
-- **Intelligent parser**: Filters code parts, file paths, technical terms
-- **Context preservation**: Character names & placeholders are preserved
-- **Ren'Py tag support**: Keeps tags like {color}, {size}
-
-### 🛡️ Reliability
-- **Error capture**: Retry & logging
-- **Rate limiting**: Engine-based adaptive delay
-- **Proxy management**: Statistics of working proxies
+### 🔧 RenPy Integration
+- **Correct format output**: Individual `translate strings` blocks as required by RenPy
+- **Language initialization**: Automatic language setup files
+- **Cache management**: Built-in RenPy cache clearing
+- **Directory structure**: Proper `game/tl/[language]/` organization
 
 ## 📦 Installation
 
@@ -47,36 +42,34 @@
 
 ### Steps
 
-1. Get the code:
+1. **Clone the repository:**
 ```bash
-git clone https://github.com/kullanici/RenLocalizer-V2.git
-cd RenLocalizer-V2
+git clone https://github.com/yourusername/RenLocalizer.git
+cd RenLocalizer
 ```
 
-2. Create virtual environment (recommended):
+2. **Create virtual environment (recommended):**
 ```bash
 python -m venv venv
+
 # On Windows:
 venv\Scripts\activate
+
 # On Linux/macOS:
 source venv/bin/activate
 ```
 
-3. Install requirements:
+3. **Install dependencies:**
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Run the application:
+4. **Run the application:**
 ```bash
-# On Linux/macOS:
 python run.py
-
-# On Windows:
-# Either double-click run.bat or use PowerShell:
-```powershell
-$env:PYTHONPATH="$(Get-Location)"; python run.py
 ```
+
+Or on Windows, you can double-click `run.bat`
 
 ## 🚀 Quick Start
 1. Launch the app (`python run.py`)
@@ -146,4 +139,4 @@ This project is licensed under **GPL-3.0-or-later**. See `LICENSE`.
 Open an issue or contribute. Community contributions welcome.
 
 ---
-**RenLocalizer V2** – Professional translation accelerator for Ren'Py projects.
+**RenLocalizer v2.0.1** – Professional translation accelerator for Ren'Py projects.

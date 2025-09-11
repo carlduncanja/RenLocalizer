@@ -143,22 +143,30 @@ class RenPyOutputFormatter:
                                 menu_options: List[Dict],
                                 language_code: str,
                                 menu_id: str = None) -> str:
-        """Generate menu translation block."""
+        """Generate menu translation block - DEPRECATED. 
+        
+        Menu translations should use translate strings format instead.
+        This method is kept for compatibility but menu items should be 
+        included in the main strings block.
+        """
+        
+        # Menu choices should be in translate strings block, not separate menu blocks
+        # According to RenPy documentation: menu choices use "translate strings" format
+        
+        block = f"# NOTE: Menu choices should be in 'translate {language_code} strings:' block\n"
+        block += f"# This is the old format and may not work properly in RenPy\n\n"
         
         if not menu_id:
             menu_id = f"menu_{self.sanitize_translation_id('_'.join([opt['original'] for opt in menu_options[:3]]))}"
         
-        # IMPORTANT: Previously we used escaped newline sequences ("\\n") which
-        # produced *literal* backslash-n characters in the output file (e.g. "\ntranslate ...")
-        # breaking Ren'Py parsing. We now use real newlines.
-        block = f"translate {language_code} {menu_id}:\n\n"
+        block += f"translate {language_code} {menu_id}:\n\n"
         
         for i, option in enumerate(menu_options):
             original = self.escape_renpy_string(option['original'])
             translated = self.escape_renpy_string(option['translated'])
             # Add each choice with real newlines
             block += f'    # "{original}"\n'
-            block += f'    "{translated}": # Choice {i+1}\n'
+            block += f'    "{translated}"\n'
         
         block += "\n"
         return block
@@ -169,7 +177,7 @@ class RenPyOutputFormatter:
                               source_file: Path = None,
                               include_header: bool = True,
                               output_format: str = "old_new") -> str:
-        """Format complete translation file."""
+        """Format complete translation file with SEPARATE blocks for each translation."""
         
         output_lines = []
         
@@ -177,108 +185,30 @@ class RenPyOutputFormatter:
             header = self.generate_file_header(language_code, source_file)
             output_lines.append(header)
         
-        # For string-based translations, we need one big strings block
-        if output_format == "old_new":
-            output_lines.append(f"translate {language_code} strings:")
-            output_lines.append("")
-            
-            seen_translations = set()
-            
-            for result in translation_results:
-                if not result.success or not result.translated_text:
-                    continue
-                
-                # Avoid duplicates
-                key = f"{result.original_text}_{result.translated_text}"
-                if key in seen_translations:
-                    continue
-                seen_translations.add(key)
-                
-                escaped_original = self.escape_renpy_string(result.original_text)
-                escaped_translated = self.escape_renpy_string(result.translated_text)
-                
-                # Check if it's character dialogue
-                character = result.metadata.get('character')
-                if character and character.strip():
-                    output_lines.append(f'    old {character} "{escaped_original}"')
-                    output_lines.append(f'    new {character} "{escaped_translated}"')
-                else:
-                    output_lines.append(f'    old "{escaped_original}"')
-                    output_lines.append(f'    new "{escaped_translated}"')
-                
-                output_lines.append("")  # Empty line between translations
+        # CRITICAL FIX: Create SEPARATE translate strings blocks for each translation
+        # This is what RenPy actually requires - NOT one big block
         
-        else:
-            # Standard format - keep existing logic
-            dialogue_translations = []
-            other_translations = []
+        seen_translations = set()
+        
+        for result in translation_results:
+            if not result.success or not result.translated_text:
+                continue
             
-            seen_translations = set()
+            # Avoid duplicates
+            key = f"{result.original_text}_{result.translated_text}"
+            if key in seen_translations:
+                continue
+            seen_translations.add(key)
             
-            for result in translation_results:
-                if not result.success or not result.translated_text:
-                    continue
-                
-                # Avoid duplicates
-                key = f"{result.original_text}_{result.translated_text}"
-                if key in seen_translations:
-                    continue
-                seen_translations.add(key)
-                
-                # Determine translation type from metadata
-                text_type = result.metadata.get('type', 'other')
-                character = result.metadata.get('character')
-                context = result.metadata.get('context', '')
-                
-                if text_type == 'dialogue' and character:
-                    dialogue_translations.append({
-                        'character': character,
-                        'original': result.original_text,
-                        'translated': result.translated_text,
-                        'context': context
-                    })
-                else:
-                    other_translations.append({
-                        'original': result.original_text,
-                        'translated': result.translated_text,
-                        'context': context,
-                        'type': text_type
-                    })
+            escaped_original = self.escape_renpy_string(result.original_text)
+            escaped_translated = self.escape_renpy_string(result.translated_text)
             
-            # Generate dialogue translations
-            if dialogue_translations:
-                output_lines.append("# Character Dialogue Translations")
-                output_lines.append("")
-                
-                for trans in dialogue_translations:
-                    block = self.generate_character_translation(
-                        trans['character'],
-                        trans['original'],
-                        trans['translated'],
-                        language_code,
-                        mode=output_format
-                    )
-                    output_lines.append(block)
-            
-            # Generate other translations
-            if other_translations:
-                output_lines.append("# Other Text Translations")
-                output_lines.append("")
-                
-                for trans in other_translations:
-                    translation_id = None
-                    if trans['type'] in ['textbutton', 'screen_text', 'text_action']:
-                        translation_id = f"{trans['type']}_{self.sanitize_translation_id(trans['original'])}"
-                    
-                    block = self.generate_translation_block(
-                        trans['original'],
-                        trans['translated'],
-                        language_code,
-                        translation_id,
-                        trans['context'],
-                        mode=output_format
-                    )
-                    output_lines.append(block)
+            # Create a SEPARATE translate strings block for each translation
+            # This is the correct RenPy format according to documentation
+            output_lines.append(f"translate {language_code} strings:")
+            output_lines.append(f'    old "{escaped_original}"')
+            output_lines.append(f'    new "{escaped_translated}"')
+            output_lines.append("")  # Empty line between blocks
         
         # Join sections with real newlines
         return "\n".join(output_lines)
@@ -289,7 +219,7 @@ class RenPyOutputFormatter:
         
         header = f"""# Ren'Py Translation File
 # Language: {language_code}
-# Generated by: RenLocalizer V2
+# Generated by: RenLocalizer v2.0.1
 # Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
         
@@ -420,7 +350,7 @@ class RenPyOutputFormatter:
         return None
     
     def _create_language_init_file(self, game_dir: Path, language_code: str):
-        """Create language initialization file for Ren'Py (Correct Version)."""
+        """Create minimal, working language initialization file for RenPy."""
         try:
             # Language display names
             language_names = {
@@ -440,49 +370,47 @@ class RenPyOutputFormatter:
             
             display_name = language_names.get(language_code, language_code.upper())
             
-            # Create simple, working language file
+            # Create minimal, working language file
             init_file_path = game_dir / f"a0_{language_code}_language.rpy"
             
-            # Simple and reliable language setup
+            # MINIMAL language setup - avoid config errors
             init_content = f'''# Language Configuration for {display_name}
-# Generated by RenLocalizer V2
+# Generated by RenLocalizer v2.0.1
+# Minimal setup for maximum compatibility
 
-# Simple language setup without deprecated functions
-init -100 python:
-    # Set language directly
-    config.language = "{language_code}"
-    
-    # Store in persistent data
-    try:
-        if hasattr(renpy.store, 'persistent'):
-            persistent.language = "{language_code}"
-    except:
-        pass
-    
-    print("🌐 Language set to: {display_name} ({language_code})")
+# Language preference storage
+default persistent.language = None
 
-# Default persistent language
-default persistent.language = "{language_code}"
-
-# Apply language when game starts
+# Language application - SAFE VERSION
 init python:
-    # Set language immediately
-    config.language = "{language_code}"
-    
-    # Try to change language (may not be needed in newer Ren'Py)
-    try:
-        renpy.change_language("{language_code}")
-    except:
-        # If change_language doesn't work, that's fine
-        # Just setting config.language should be enough
-        pass
+    # Simple language application without complex config
+    def apply_{language_code}_language():
+        try:
+            renpy.change_language("{language_code}")
+            persistent.language = "{language_code}"
+            return True
+        except:
+            # If change_language fails, just store preference
+            persistent.language = "{language_code}"
+            return False
+
+# Auto-apply language if selected
+init python:
+    if persistent.language == "{language_code}":
+        apply_{language_code}_language()
+
+# Manual language setter for preferences screen
+init python:
+    def set_language_{language_code}():
+        apply_{language_code}_language()
+        renpy.restart_interaction()
 
 '''
             
             with open(init_file_path, 'w', encoding='utf-8') as f:
                 f.write(init_content)
             
-            self.logger.info(f"Created simple language file: {init_file_path}")
+            self.logger.info(f"Created minimal language file: {init_file_path}")
             
         except Exception as e:
             self.logger.error(f"Error creating language init file: {e}")

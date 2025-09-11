@@ -1,45 +1,46 @@
 # Changelog
 
-## [2.1.0] - 2025-09-10
+# Changelog
 
-### ✨ Major Features Added
-- **Enhanced Placeholder Preservation System**: Complete RenPy variable protection during translation
-- **Case-Insensitive Variable Restoration**: Handles translation engine case changes automatically
-- **Advanced Translation Worker**: Integrated placeholder preservation into the translation pipeline
-- **Robust Error Handling**: Comprehensive variable case mismatch detection and fixing
-- **Icon Integration**: Program ve tüm dialoglarda custom icon desteği
-- **Executable Support**: PyInstaller compatibility with proper asset bundling
+## [2.0.1] - 2025-09-11
 
-### 🔧 Improvements
-- **Translation Quality**: Variables like `[r1name]`, `[mcname]`, `[player_name]` are now perfectly preserved
-- **RenPy Compatibility**: Full compatibility with RenPy 8.3+ (removed deprecated APIs)
-- **Memory Optimization**: Improved parser performance and reduced memory usage
-- **User Experience**: Better error messages and progress reporting
+### 🎯 RenPy Integration Overhaul
+- **Conditional Menu Support**: Perfect handling of `"choice" if condition:` syntax
+- **Technical String Filtering**: Automatically excludes color codes (#08f), font files (.ttf), performance metrics
+- **Correct Output Format**: Individual `translate strings` blocks (RenPy standard compliance)
+- **Modern Language Initialization**: Compatible language setup without deprecated APIs
+- **Encoding Fixes**: Proper UTF-8 handling for all international characters
 
-### 🐛 Bug Fixes
-- **UI Text Loading**: Fixed locales loading for PyInstaller executables using sys._MEIPASS
-- Fixed variable case mismatches causing `NameError` in RenPy games
-- Resolved placeholder preservation issues with complex text formatting
-- Fixed translation worker metadata passing
-- Corrected language initialization for RenPy integration
+### 🔧 Parser Improvements
+- **Enhanced Regex Engine**: Improved extraction of conditional menu choices
+- **Smart Content Detection**: Better filtering of meaningful vs technical content
+- **Multi-line String Handling**: Fixed parsing issues with complex string patterns
+- **Variable Preservation**: Maintains `[character_name]` and placeholder integrity
 
-### 🔒 Security & Cleanup
-- Removed API keys from version control
-- Added comprehensive .gitignore for sensitive data protection
-- Cleaned up test files and temporary data
-- Production-ready codebase with full sanitization
+### 🐛 Critical Bug Fixes
+- Fixed "Could not parse string" errors in RenPy
+- Resolved multi-line string parsing issues (line 2327 type errors)
+- Corrected character encoding problems (Türkçe character corruption)
+- Fixed language initialization file compatibility issues
+- Eliminated technical string translation (fps, renderer, etc.)
 
-### 📖 Documentation
-- Updated README with new features and troubleshooting
-- Added Turkish documentation (README.tr.md)
-- Release notes and GitHub templates
-- Comprehensive build and distribution guides
+### � Quality Improvements
+- **Cache Management**: Built-in RenPy cache clearing functionality
+- **Error Prevention**: Proactive filtering prevents RenPy parse errors
+- **Output Validation**: Ensures all generated files are RenPy-compatible
+- **Real-world Testing**: Validated with actual RenPy visual novel projects
 
-### 🧪 Testing & Quality
-- Comprehensive test suite for placeholder preservation
-- Real-world scenario testing with actual RenPy projects
-- Variable case validation and automatic fixing tools
-- Standalone executable testing and validation
+### � Distribution Ready
+- **Clean Repository**: Removed all temporary test and debug files
+- **Professional Documentation**: Updated README, added CONTRIBUTING.md, RELEASE_NOTES.md
+- **Example Configuration**: Sample config.json.example for users
+- **GitHub Ready**: Proper .gitignore, structured for open source collaboration
+
+### 🧪 Testing & Validation
+- Comprehensive testing with Secret Obsessions 0.11 (RenPy 8.3.2)
+- Menu choice translation validation
+- Technical string exclusion verification
+- Encoding and character preservation testing
 
 ## [2.0.0] - Previous Release
 - Initial stable release with core translation functionality

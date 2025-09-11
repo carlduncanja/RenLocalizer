@@ -292,7 +292,7 @@ class ConfigManager:
     
     def get_ui_translations(self) -> Dict[str, Dict[str, str]]:
         """Get UI translations for supported languages from JSON files."""
-        return self._language_data
+        return {
             'en': {
                 'app_title': 'RenLocalizer V2',
                 'file_menu': 'File',
@@ -392,7 +392,7 @@ class ConfigManager:
 <li>Modern user interface</li>
 <li>UTF-8 Ren'Py format output</li>
 </ul>
-<p><b>Version:</b> 2.0.0</p>
+<p><b>Version:</b> 2.0.1</p>
 <p><b>Framework:</b> {framework}</p>
 <p>© 2025 RenLocalizer Team</p>''',
                 'info_title': 'Output Format Information',

@@ -1,119 +1,134 @@
-> ⚠️ **Warning (English)**: This project has been assisted by AI. It may contain mistakes, incomplete implementations and is still under active development. It is NOT a final release.
-> ⚠️ **Uyarı (Türkçe)**: Bu proje yapay zeka desteğiyle hazırlanmıştır; hatalar ve eksikler içerebilir, halen geliştirme aşamasındadır ve nihai sürüm değildir.
+> ⚠️ **Uyarı (İngilizce)**: Bu proje yapay zeka tarafından desteklenmiştir. Hatalar ve eksik uygulamalar içerebilir ve halen aktif olarak geliştirilme aşamasındadır. Nihai sürüm DEĞİLDİR.
 
-# RenLocalizer V2
+# RenLocalizer
 
-[English README](./README.md) | **Türkçe**
+**RenLocalizer**, Ren'Py görsel roman (.rpy) dosyalarını yüksek doğruluk ve performansla otomatik olarak çevirmek için tasarlanmış modern bir masaüstü uygulamasıdır. Birden fazla çeviri motoru, akıllı metin filtreleme ve profesyonel bir kullanıcı arayüzü sunar.
 
-![Lisans](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)
+## ✨ Temel Özellikler
 
-**RenLocalizer V2**, Ren'Py görsel roman (.rpy) dosyalarını profesyonel şekilde çoklu çeviri motorlarıyla otomatik çevirmek için geliştirilmiş yüksek performanslı bir masaüstü uygulamasıdır. Otomatik proxy rotasyonu, toplu çeviri, akıllı filtreleme ve modern arayüz sunar.
-
-## ✨ Özellikler
+### 🎯 Akıllı Çeviri
+- **Birden fazla motor**: Google Translate (web), DeepL API desteği
+- **RenPy uyumlu ayrıştırma**: Menü seçeneklerini, diyalogları ve UI öğelerini doğru şekilde işler
+- **Koşullu menü desteği**: `“choice” if condition:` sözdizimini işler
+- **Teknik filtreleme**: Renk kodlarını, yazı tipi dosyalarını ve performans ölçütlerini otomatik olarak hariç tutar
+- **Karakter koruma**: `[karakter_adı]` değişkenlerini ve yer tutucuları korur
 
 ### 🚀 Yüksek Performans
-- **Uygulanan motorlar**: Google (web), DeepL (API)
-- **Planlanan**: Bing (Microsoft), Yandex, LibreTranslator
-- **Eşzamanlı işlem**: Arayüzde 256'ya kadar (çekirdek şu an 32 aktif slot)
-- **Toplu çeviri**: 2000'e kadar yapılandırılabilir
-- **Proxy rotasyonu**: Çoklu kaynak + doğrulama
-- **Akıllı fallback**: Google isteğinde proxy/aiohttp hata verirse direkt requests
+- **Eşzamanlı işleme**: Yapılandırılabilir iş parçacığı sayısı (1-256)
+- **Toplu çeviri**: Birden fazla metni birlikte işler (1-2000)
+- **Proxy rotasyonu**: Otomatik proxy yönetimi ve doğrulama
+- **Akıllı yedekleme**: Proxy'ler başarısız olursa doğrudan isteklere geri döner
+- **Hız sınırlama**: Engellemeyi önlemek için uyarlanabilir gecikmeler
 
 ### 🎨 Modern Arayüz
-- **Profesyonel temalar**: Koyu, Açık, Solarized, Göz-dostu
-- **Gerçek zamanlı izleme**: Anlık hız, ilerleme ve durum
-- **İki dil desteği**: İngilizce & Türkçe arayüz
-- **Otomatik kaydetme**: Zaman damgalı klasörlere çıktı
+- **Profesyonel temalar**: Koyu, Açık, Solarized, Göz dostu
+- **Gerçek zamanlı izleme**: Canlı çeviri ilerlemesi ve istatistikleri
+- **İki dilli kullanıcı arayüzü**: İngilizce ve Türkçe arayüz desteği
+- **Otomatik kaydetme**: Uygun RenPy yapısı ile zaman damgalı çıktı
 
-### 🔧 Akıllı İşleme
-- **Akıllı ayrıştırıcı**: Kod parçaları, dosya yolları, teknik terimleri filtreler
-- **Bağlam koruma**: Karakter isimleri ve placeholder'lar bozulmaz
-- **Ren'Py etiket desteği**: {color}, {size} gibi format tag'leri korunur
-
-### 🛡️ Güvenilirlik
-- **Hata yakalama**: Yeniden deneme & loglama
-- **Oran sınırlama**: Motor bazlı akıllı gecikme
-- **Proxy yönetimi**: Çalışan proxy istatistikleri
+### 🔧 RenPy Entegrasyonu
+- **Doğru formatlı çıktı**: RenPy'nin gerektirdiği şekilde ayrı ayrı `çeviri dizeleri` blokları
+- **Dil başlatma**: Otomatik dil kurulum dosyaları
+- **Önbellek yönetimi**: Yerleşik RenPy önbellek temizleme
+- **Dizin yapısı**: Uygun `game/tl/[dil]/` düzeni
 
 ## 📦 Kurulum
 
+### Ön Koşullar
+- Python 3.8 veya üstü
+- Git (isteğe bağlı, ZIP olarak da indirebilirsiniz)
+- pip (Python paket yöneticisi)
+- Windows kullanıcıları için: C++ desteği ile Visual Studio Build Tools (bazı bağımlılıklar için)
+
+### Adımlar
+
+1. **Depoyu klonlayın:**
 ```bash
-git clone https://github.com/kullanici/RenLocalizer-V2.git
-cd RenLocalizer-V2
+git clone https://github.com/yourusername/RenLocalizer.git
+cd RenLocalizer
+```
+
+2. **Sanal ortam oluşturun (önerilir):**
+```bash
+python -m venv venv
+
+# Windows'ta:
+venv\Scripts\activate
+
+# Linux/macOS'ta:
+source venv/bin/activate
+```
+
+3. **Bağımlılıkları yükleyin:**
+```bash
 pip install -r requirements.txt
+```
+
+4. **Uygulamayı çalıştırın:**
+```bash
 python run.py
 ```
 
-Windows PowerShell için:
-```powershell
-$env:PYTHONPATH="$(Get-Location)"; python run.py
-```
+Veya Windows'ta, `run.bat` dosyasını çift tıklayabilirsiniz.
 
 ## 🚀 Hızlı Başlangıç
-1. Uygulamayı aç (`python run.py`)
-2. `.rpy` dosyalarının bulunduğu klasörü seç
-3. Kaynak ve hedef dili seç (örn. EN → TR)
-4. Motoru ve batch ayarlarını yapılandır
-5. Çeviriyi başlat – ilerlemeyi canlı takip et
-6. Çeviriler otomatik kaydedilecek (veya manuel kaydedebilirsin)
+1. Uygulamayı başlatın (`python run.py`)
+2. `.rpy` dosyalarını içeren klasörü seçin
+3. Kaynak ve hedef dili seçin (ör. EN → TR)
+4. Motor ve toplu iş ayarlarını yapılandırın
+5. Çeviriyi başlatın – canlı ilerlemeyi izleyin
+6. Çeviriler otomatik olarak kaydedilir (veya manuel olarak kaydedebilirsiniz)
 
 ## ⚙️ Ayarlar
-- Eşzamanlı thread sayısı (1–256)
-- Batch boyutu (1–2000)
-- İstek gecikmesi (0–5 sn)
-- Maksimum yeniden deneme
-- Proxy kullan / kapat
+- Eşzamanlı iş parçacıkları (1–256)
+- Toplu iş boyutu (1–2000)
+- İstek gecikmesi (0–5 s)
+- Maksimum yeniden deneme sayısı
+- Proxy'yi etkinleştir / devre dışı bırak
 
-## 🌍 Motor Durum Tablosu
+## 🌍 Motor Durumu Tablosu
 | Motor | Durum | Not |
-|-------|-------|-----|
-| Google | ✅ Aktif | Web istemci + proxy fallback |
-| DeepL | ✅ Aktif | API anahtarı sadece kullanırsan gerekli |
-| Bing / Microsoft | ⏳ Planlandı | Henüz eklenmedi |
-| Yandex | ⏳ Planlandı | Henüz eklenmedi |
-| LibreTranslator | ⏳ Planlandı | Self-host seçeneği gelecekte |
+|--------|--------|------|
+| Google | ✅ Etkin | Web istemcisi + proxy yedeği |
+| DeepL | ✅ Etkin | Yalnızca kullandığınızda API anahtarı gerekir |
+| Bing / Microsoft | ⏳ Planlanmış | Henüz eklenmedi |
+| Yandex | ⏳ Planlanmış | Henüz eklenmedi |
+| LibreTranslator | ⏳ Planlanmış | Gelecekte kendi kendine barındırma seçeneği |
 
 ## 🧠 Ayrıştırma Mantığı
-- Kod blokları, label tanımları, python blokları hariç tutulur
-- Sadece gerçek diyalog ve kullanıcıya görünen metinler alınır
+- Kod blokları, etiket tanımları, python blokları hariç tutulur
+- Yalnızca gerçek diyaloglar ve kullanıcı tarafından görülebilen dizeler çıkarılır
 - Dosya yolları, değişkenler, `%s`, `{name}` vb. korunur
 
 ## 📁 Proje Yapısı
 ```
 src/
-  core/ (çeviri, parser, proxy)
-  gui/  (arayüz ve temalar)
-  utils/ (config)
+    core/ (çeviri, ayrıştırıcı, proxy)
+    gui/  (arayüz ve temalar)
+    utils/ (yapılandırma)
 run.py (başlatıcı)
 README.md / README.tr.md
-LICENSE
+LİSANS
 ```
 
 ## 🔐 API Anahtarları
-Şu an yalnızca DeepL için API anahtarı anlamlı; diğer motorlar eklendiğinde etkinleşecek.
+Şu anda sadece DeepL anahtarı anlamlıdır; diğerleri motorlar geldiğinde etkinleşir.
 
-## 🧪 Test & Katkı
-Pull Request gönderebilirsin. Önerilen geliştirmeler:
+## 📦 Yürütülebilir Dosya Oluşturma
+Bağımsız yürütülebilir dosyalar oluşturma konusunda ayrıntılı talimatlar için `BUILD.md` dosyasına bakın.
+
+## 🧪 Test Etme ve Katkı Sağlama
+Pull Request'ler memnuniyetle kabul edilir. Önerilen iyileştirmeler:
 - Yeni motor entegrasyonu
 - Performans optimizasyonu
 - Ek dil desteği
-- UI geliştirmeleri
+- UI iyileştirmeleri
 
 ## ❓ Sorun Giderme
-| Problem | Çözüm |
-|---------|-------|
-| Module not found 'src' | `PYTHONPATH` ayarla veya kök klasörden çalıştır |
-| Yavaş çeviri | Thread ve batch değerlerini yükselt, gecikmeyi düşür |
-| Rate limit | Proxy aç veya motor değiştir |
-| Bozuk tag | Placeholder koruma açık mı kontrol et |
+| Sorun | Çözüm |
+|---------|----------|
+| ‘src’ modülü bulunamadı | `PYTHONPATH` ayarlayın veya kökten çalıştırın |
+| Yavaş çeviri | İş parçacığı ve toplu iş sayısını artırın, gecikmeyi azaltın |
+| Hız sınırı | Proxy'yi etkinleştirin veya motoru değiştirin |
+| Bozuk etiket | Yer tutucu korumasının etkinleştirildiğinden emin olun |
 
-## 📄 Lisans
-Bu proje **GPL-3.0-or-later** lisansı ile dağıtılmaktadır. Ayrıntılar için `LICENSE` dosyasına bakın.
-
-## 💬 İletişim
-Issue açabilir veya katkı sağlayabilirsin. Open source topluluğuna katkılar memnuniyetle karşılanır.
-
----
-**RenLocalizer V2** – Ren'Py projeleri için profesyonel çeviri hızlandırıcısı.
