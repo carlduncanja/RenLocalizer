@@ -102,8 +102,8 @@ class AppSettings:
     auto_save_settings: bool = True
     auto_save_translations: bool = True
     check_for_updates: bool = True
-    # Output format: 'simple' (current) or 'old_new' (Ren'Py official old/new blocks)
-    output_format: str = "simple"
+    # Output format: 'old_new' (Ren'Py official old/new blocks, recommended) or 'simple' (legacy)
+    output_format: str = "old_new"
     # Parser workers for parallel file processing
     parser_workers: int = 4
 

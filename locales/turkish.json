@@ -86,7 +86,7 @@
   "translation_error": "Çeviri Hatası",
   
   "about_title": "RenLocalizer V2 Hakkında",
-  "about_content": "<h3>RenLocalizer V2</h3><p>Ren'Py oyunları için gelişmiş çok-motorlu çeviri aracı.</p><p><b>Özellikler:</b></p><ul><li>Çok-motorlu çeviri desteği</li><li>Otomatik proxy rotasyonu</li><li>Toplu işlem</li><li>Modern kullanıcı arayüzü</li><li>UTF-8 Ren'Py format çıktısı</li></ul><p><b>Sürüm:</b> 2.0.3</p><p><b>Framework:</b> {framework}</p><p>© 2025 RenLocalizer Ekibi</p>",
+  "about_content": "<h3>RenLocalizer V2</h3><p>Ren'Py oyunları için gelişmiş çok-motorlu çeviri aracı.</p><p><b>Özellikler:</b></p><ul><li>Çok-motorlu çeviri desteği</li><li>Otomatik proxy rotasyonu</li><li>Toplu işlem</li><li>Modern kullanıcı arayüzü</li><li>UTF-8 Ren'Py format çıktısı</li></ul><p><b>Sürüm:</b> 2.0.4</p><p><b>Framework:</b> {framework}</p><p>© 2025 RenLocalizer Ekibi</p>",
   
   "general_tab": "Genel",
   "translation_tab": "Çeviri",

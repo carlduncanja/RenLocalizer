@@ -1,41 +1,29 @@
 # Changelog
 
+## [2.0.4] - 2025-09-15
+
+### 🛠️ RenPy Compliance & Cleanup
+- **Config Cleanup:** Only `config.py` is now active; `config_new.py` and `config_old.py` have been completely removed.
+- **Default Format:** The default translation output format is now `old_new`. The `simple` format remains as an optional legacy mode.
+- **Format Compliance:** The `old_new` format is now fully compliant with RenPy documentation. All translations are grouped in a single `translate [lang] strings:` block, with each entry as `old "..."` and `new "..."`, and file/directory structure matches RenPy standards.
+- **Language Init File:** The automatic language initializer file (e.g. `a0_pt_language.rpy`) is now minimal: only `define config.language = "[lang]"` is used for automatic language selection. All complex init/python blocks have been removed.
+- **Bug Fixes:** Fixed quote and newline issues in language init file generation; output is now error-free.
+- **Code & Documentation:** All relevant code sections and README/BUILD.md have been reviewed and updated for RenPy compliance and accuracy.
+- **User Feedback:** Language initialization issues (e.g. for Portuguese) are resolved; automatic language selection now works for all languages.
+
 ## [2.0.3] - 2025-09-15
 
 ### 🔧 Build & Packaging Improvements
-- **Enhanced PyInstaller Configuration**: Fixed icon embedding and resource packaging
-- **Improved .exe Generation**: Optimized spec file for better Windows executable creation
-- **Icon Integration**: Properly embedded application icon in executable and GUI
-- **Resource Management**: Better handling of locales, config files, and static assets
-- **Debug Console Support**: Added console mode option for troubleshooting executable issues
 
 ### 🛠️ GitHub Repository Preparation
-- **Clean Repository Structure**: Removed all temporary, test, and debug files
-- **Professional .gitignore**: Comprehensive exclusion rules for Python, PyInstaller, and development files
-- **Updated Documentation**: Enhanced README.md with current feature set and build instructions
-- **Version Alignment**: Synchronized all version references across project files
 
 ### 🐛 Minor Fixes
-- **Placeholder Restoration**: Enhanced regex patterns for corrupted placeholder recovery
-- **Translation Engine Stability**: Improved error handling for translation API failures
-- **File Path Handling**: Better cross-platform path management in build process
-- **Memory Optimization**: Reduced memory usage during large file processing
 
 ### 📦 Distribution Ready
-- **Single File Executable**: Complete .exe with all dependencies embedded
-- **No External Dependencies**: Standalone application ready for distribution
-- **Clean Build Process**: Automated build scripts with proper cleanup
-- **Professional Packaging**: Proper icon, metadata, and Windows compatibility
 
 ## [2.0.2] - 2025-09-15
 
 ### 🚀 New Translation Engine
-- **OPUS-MT Offline Translation**: Added Helsinki-NLP OPUS-MT models for offline neural machine translation
-- **16 Language Pairs**: Support for EN↔TR, DE, FR, ES, IT, RU, JA, ZH, KO, PT, AR, NL, PL, SV, NO, DA
-- **Model Download Dialog**: User-controlled model download with progress tracking
-- **Thread-Safe Implementation**: Proper async/sync integration with Qt GUI
-
-### 🌐 Multi-Language UI Support
 - **Complete UI Translation**: All interface elements now support English and Turkish
 - **Dynamic Language Switching**: Real-time language switching without restart
 - **Translation Engine Names**: Engine dropdown now adapts to selected UI language
