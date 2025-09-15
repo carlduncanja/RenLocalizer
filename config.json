@@ -21,12 +21,12 @@
         "window_width": 1536,
         "window_height": 793,
         "last_input_directory": "C:/Users/User/Desktop/Projelerim/Renpy/game/DreamCorruption-v0.1.5-pc/game",
-        "last_output_directory": "",
+        "last_output_directory": "C:\\Users\\User\\Desktop\\Projelerim\\Renpy\\game\\DreamCorruption-v0.1.5-pc",
         "auto_save_settings": true,
         "auto_save_translations": true,
         "check_for_updates": true,
         "output_format": "simple",
-        "parser_workers": 6
+        "parser_workers": 8
     },
     "proxy_settings": {
         "enabled": true,

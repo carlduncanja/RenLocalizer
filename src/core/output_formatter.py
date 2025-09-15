@@ -47,7 +47,7 @@ class RenPyOutputFormatter:
     def escape_renpy_string(self, text: str) -> str:
         """Escape special characters for Ren'Py strings."""
         # More careful escaping to avoid breaking translations
-        # CRITICAL: Don't break Ren'Py variables and placeholders
+        # CRITICAL: Don't break Ren'Py variables, placeholders, and tags
         
         # First, temporarily protect Ren'Py variables and expressions
         import re
@@ -56,21 +56,33 @@ class RenPyOutputFormatter:
         variable_pattern = re.compile(r'\[[^\[\]]+\]')
         variables = variable_pattern.findall(text)
         
-        # Replace variables with placeholders temporarily
+        # Find all Ren'Py tags like {i}, {b}, {color=#ff0000}, {/i}, etc.
+        tag_pattern = re.compile(r'\{[^{}]*\}')
+        tags = tag_pattern.findall(text)
+        
+        # Replace variables and tags with placeholders temporarily
         temp_text = text
-        var_map = {}
+        protection_map = {}
+        
+        # Protect variables
         for i, var in enumerate(variables):
             placeholder = f"__VAR_{i}__"
-            var_map[placeholder] = var
+            protection_map[placeholder] = var
             temp_text = temp_text.replace(var, placeholder, 1)
+        
+        # Protect tags
+        for i, tag in enumerate(tags):
+            placeholder = f"__TAG_{i}__"
+            protection_map[placeholder] = tag
+            temp_text = temp_text.replace(tag, placeholder, 1)
         
         # Now escape the rest
         temp_text = temp_text.replace('\\', '\\\\')  # Escape backslashes first
         temp_text = temp_text.replace('"', '\\"')     # Escape double quotes
         
-        # Restore variables
-        for placeholder, original_var in var_map.items():
-            temp_text = temp_text.replace(placeholder, original_var)
+        # Restore variables and tags
+        for placeholder, original_content in protection_map.items():
+            temp_text = temp_text.replace(placeholder, original_content)
         
         return temp_text
     
@@ -94,16 +106,14 @@ class RenPyOutputFormatter:
         escaped_translated = self.escape_renpy_string(translated_text)
         
         if mode == "old_new":
-            # Old/new format - better for existing games but requires exact match
+            # Old/new format - INDIVIDUAL ENTRY (for building larger block)
             block = (
-                f"translate {language_code} strings:\n"
                 f"    old \"{escaped_original}\"\n"
                 f"    new \"{escaped_translated}\"\n\n"
             )
         else:
-            # Standard string translation that works with any label
-            block = f'''translate {language_code} strings:
-    old "{escaped_original}"
+            # Simple format - INDIVIDUAL ENTRY (for building larger block)
+            block = f'''    old "{escaped_original}"
     new "{escaped_translated}"
 
 '''
@@ -123,16 +133,14 @@ class RenPyOutputFormatter:
         escaped_translated = self.escape_renpy_string(translated_text)
         
         if mode == "old_new":
-            # String-based format that works with any character dialogue
+            # String-based format - INDIVIDUAL ENTRY (for building larger block)
             block = (
-                f"translate {language_code} strings:\n"
                 f"    old {character_name} \"{escaped_original}\"\n"
                 f"    new {character_name} \"{escaped_translated}\"\n\n"
             )
         else:
-            # Also use string-based format for consistency
-            block = f'''translate {language_code} strings:
-    old {character_name} "{escaped_original}"
+            # Simple format - INDIVIDUAL ENTRY (for building larger block)
+            block = f'''    old {character_name} "{escaped_original}"
     new {character_name} "{escaped_translated}"
 
 '''
@@ -185,10 +193,15 @@ class RenPyOutputFormatter:
             header = self.generate_file_header(language_code, source_file)
             output_lines.append(header)
         
-        # CRITICAL FIX: Create SEPARATE translate strings blocks for each translation
-        # This is what RenPy actually requires - NOT one big block
+        # CRITICAL FIX: Create ONE translate strings block for ALL translations
+        # This is the CORRECT Ren'Py format
         
         seen_translations = set()
+        string_translations = []
+        
+        # Add the opening translate strings block
+        string_translations.append(f"translate {language_code} strings:")
+        string_translations.append("")
         
         for result in translation_results:
             if not result.success or not result.translated_text:
@@ -203,12 +216,20 @@ class RenPyOutputFormatter:
             escaped_original = self.escape_renpy_string(result.original_text)
             escaped_translated = self.escape_renpy_string(result.translated_text)
             
-            # Create a SEPARATE translate strings block for each translation
-            # This is the correct RenPy format according to documentation
-            output_lines.append(f"translate {language_code} strings:")
-            output_lines.append(f'    old "{escaped_original}"')
-            output_lines.append(f'    new "{escaped_translated}"')
-            output_lines.append("")  # Empty line between blocks
+            # Add translation pairs based on output format
+            if output_format == "old_new":
+                # OLD_NEW format - more explicit
+                string_translations.append(f'    old "{escaped_original}"')
+                string_translations.append(f'    new "{escaped_translated}"')
+                string_translations.append("")  # Empty line between pairs
+            else:
+                # SIMPLE format - same as old_new for strings (both work the same)
+                string_translations.append(f'    old "{escaped_original}"')
+                string_translations.append(f'    new "{escaped_translated}"')
+                string_translations.append("")  # Empty line between pairs
+        
+        # Combine header and strings
+        output_lines.extend(string_translations)
         
         # Join sections with real newlines
         return "\n".join(output_lines)
@@ -378,26 +399,42 @@ class RenPyOutputFormatter:
 # Generated by RenLocalizer v2.0.1
 # Minimal setup for maximum compatibility
 
-# Language preference storage
-default persistent.language = None
+# Language preference storage - DEFAULT TO TURKISH
+default persistent.language = "{language_code}"
 
-# Language application - SAFE VERSION
+# Language application - ENHANCED VERSION
 init python:
-    # Simple language application without complex config
+    # Enhanced language application with better error handling
     def apply_{language_code}_language():
         try:
+            # Check if language is available
+            available_languages = renpy.known_languages()
+            if "{language_code}" not in available_languages:
+                renpy.notify("Translation files not found for {display_name}!")
+                return False
+            
+            # Apply the language
             renpy.change_language("{language_code}")
             persistent.language = "{language_code}"
+            renpy.notify("Language changed to {display_name}!")
             return True
-        except:
-            # If change_language fails, just store preference
+        except Exception as e:
+            renpy.notify("Language change failed: " + str(e))
             persistent.language = "{language_code}"
             return False
 
-# Auto-apply language if selected
-init python:
-    if persistent.language == "{language_code}":
-        apply_{language_code}_language()
+# Force language application on startup
+init 1 python:
+    # Auto-apply language on game start
+    def force_{language_code}_language():
+        if persistent.language == "{language_code}" or persistent.language is None:
+            result = apply_{language_code}_language()
+            if not result:
+                # Fallback: set preference without changing UI
+                renpy.game.preferences.language = "{language_code}"
+    
+    # Add to startup callbacks
+    config.start_callbacks.append(force_{language_code}_language)
 
 # Manual language setter for preferences screen
 init python:

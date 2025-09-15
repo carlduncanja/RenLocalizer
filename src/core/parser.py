@@ -253,7 +253,8 @@ class RenPyParser:
         # RenPy variable placeholders like [variable_name]
         renpy_var_pattern = r'\[([^\]]+)\]'
         for match in re.finditer(renpy_var_pattern, text):
-            placeholder_id = f"__PLACEHOLDER_{placeholder_counter}__"
+            # Use NUMBERS ONLY to prevent translation engines from translating
+            placeholder_id = f"XYZ{placeholder_counter:03d}"
             placeholder_map[placeholder_id] = match.group(0)
             processed_text = processed_text.replace(match.group(0), placeholder_id, 1)
             placeholder_counter += 1
@@ -261,7 +262,8 @@ class RenPyParser:
         # RenPy text tags like {color=#ff0000}, {/color}, {b}, {/b}, etc.
         renpy_tag_pattern = r'\{[^}]*\}'
         for match in re.finditer(renpy_tag_pattern, text):
-            placeholder_id = f"__PLACEHOLDER_{placeholder_counter}__"
+            # Use NUMBERS ONLY to prevent translation engines from translating
+            placeholder_id = f"XYZ{placeholder_counter:03d}"
             placeholder_map[placeholder_id] = match.group(0)
             processed_text = processed_text.replace(match.group(0), placeholder_id, 1)
             placeholder_counter += 1
@@ -269,7 +271,8 @@ class RenPyParser:
         # Python-style format strings like %(variable)s, %s, %d, etc.
         python_format_pattern = r'%\([^)]+\)[sdif]|%[sdif]'
         for match in re.finditer(python_format_pattern, text):
-            placeholder_id = f"__PLACEHOLDER_{placeholder_counter}__"
+            # Use NUMBERS ONLY to prevent translation engines from translating
+            placeholder_id = f"XYZ{placeholder_counter:03d}"
             placeholder_map[placeholder_id] = match.group(0)
             processed_text = processed_text.replace(match.group(0), placeholder_id, 1)
             placeholder_counter += 1
@@ -278,8 +281,9 @@ class RenPyParser:
         fstring_pattern = r'\{[^}]+\}'
         for match in re.finditer(fstring_pattern, processed_text):  # Use processed_text to avoid double replacement
             # Skip if already replaced by RenPy tag pattern
-            if not match.group(0).startswith('__PLACEHOLDER_'):
-                placeholder_id = f"__PLACEHOLDER_{placeholder_counter}__"
+            if not match.group(0).startswith('XYZ'):
+                # Use NUMBERS ONLY to prevent translation engines from translating
+                placeholder_id = f"XYZ{placeholder_counter:03d}"
                 placeholder_map[placeholder_id] = match.group(0)
                 processed_text = processed_text.replace(match.group(0), placeholder_id, 1)
                 placeholder_counter += 1
@@ -293,17 +297,62 @@ class RenPyParser:
         if not translated_text or not placeholder_map:
             return translated_text
         
+        import re
         restored_text = translated_text
         
         # First try exact match
         for placeholder_id, original_placeholder in placeholder_map.items():
             restored_text = restored_text.replace(placeholder_id, original_placeholder)
         
-        # Also try case-insensitive match for different case scenarios
-        import re
+        # Try with various corruptions that translation engines might introduce
         for placeholder_id, original_placeholder in placeholder_map.items():
-            # Create a case-insensitive pattern
-            pattern = re.escape(placeholder_id).replace(r'\_\_PLACEHOLDER\_', r'__[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]_')
-            restored_text = re.sub(pattern, original_placeholder, restored_text, flags=re.IGNORECASE)
+            # Handle case changes, spaces, and common corruptions
+            corrupted_patterns = [
+                # Case variations
+                placeholder_id.lower(),                    # xyz000
+                placeholder_id.upper(),                    # XYZ000
+                placeholder_id.capitalize(),               # Xyz000
+                placeholder_id.replace('XYZ', 'Xyz'),      # Xyz000
+                placeholder_id.replace('XYZ', 'xyz'),      # xyz000
+                
+                # Space variations
+                placeholder_id.replace('XYZ', 'XYZ '),     # XYZ 000
+                placeholder_id.replace('XYZ', ' XYZ'),     # Space before
+                placeholder_id.replace('XYZ', ' XYZ '),    # Spaces around
+                placeholder_id.replace('XYZ', 'Xyz '),     # Xyz 000
+                placeholder_id.replace('XYZ', 'xyz '),     # xyz 000
+                
+                # Multiple space variations
+                placeholder_id.replace('XYZ', 'X Y Z'),    # X Y Z000
+                placeholder_id.replace('XYZ', 'x y z'),    # x y z000
+            ]
+            
+            for pattern in corrupted_patterns:
+                # Try both exact and with spaces around
+                restored_text = restored_text.replace(pattern, original_placeholder)
+                restored_text = restored_text.replace(f" {pattern} ", f" {original_placeholder} ")
+                restored_text = restored_text.replace(f" {pattern}", f" {original_placeholder}")
+                restored_text = restored_text.replace(f"{pattern} ", f"{original_placeholder} ")
+        
+        # Handle very corrupted cases with regex - more aggressive approach
+        for placeholder_id, original_placeholder in placeholder_map.items():
+            # Extract the number from XYZ000 pattern
+            if placeholder_id.startswith('XYZ'):
+                number_part = placeholder_id[3:]  # Get "000" part
+                
+                # Create multiple regex patterns for different corruptions
+                patterns = [
+                    # Standard corruptions
+                    r'\b\s*[Xx][Yy][Zz]\s*' + number_part + r'\s*\b',
+                    # With spaces in XYZ
+                    r'\b\s*[Xx]\s*[Yy]\s*[Zz]\s*' + number_part + r'\s*\b',
+                    # Just the number when XYZ gets completely corrupted
+                    r'\b(?:XYZ|Xyz|xyz|X Y Z|x y z)\s*' + number_part + r'\b',
+                    # More aggressive - any 3 letters followed by the number
+                    r'\b[A-Za-z]{3}\s*' + number_part + r'\b'
+                ]
+                
+                for pattern in patterns:
+                    restored_text = re.sub(pattern, original_placeholder, restored_text, flags=re.IGNORECASE)
         
         return restored_text

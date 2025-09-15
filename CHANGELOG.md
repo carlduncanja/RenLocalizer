@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.0.3] - 2025-09-15
+
+### 🔧 Build & Packaging Improvements
+- **Enhanced PyInstaller Configuration**: Fixed icon embedding and resource packaging
+- **Improved .exe Generation**: Optimized spec file for better Windows executable creation
+- **Icon Integration**: Properly embedded application icon in executable and GUI
+- **Resource Management**: Better handling of locales, config files, and static assets
+- **Debug Console Support**: Added console mode option for troubleshooting executable issues
+
+### 🛠️ GitHub Repository Preparation
+- **Clean Repository Structure**: Removed all temporary, test, and debug files
+- **Professional .gitignore**: Comprehensive exclusion rules for Python, PyInstaller, and development files
+- **Updated Documentation**: Enhanced README.md with current feature set and build instructions
+- **Version Alignment**: Synchronized all version references across project files
+
+### 🐛 Minor Fixes
+- **Placeholder Restoration**: Enhanced regex patterns for corrupted placeholder recovery
+- **Translation Engine Stability**: Improved error handling for translation API failures
+- **File Path Handling**: Better cross-platform path management in build process
+- **Memory Optimization**: Reduced memory usage during large file processing
+
+### 📦 Distribution Ready
+- **Single File Executable**: Complete .exe with all dependencies embedded
+- **No External Dependencies**: Standalone application ready for distribution
+- **Clean Build Process**: Automated build scripts with proper cleanup
+- **Professional Packaging**: Proper icon, metadata, and Windows compatibility
+
 ## [2.0.2] - 2025-09-15
 
 ### 🚀 New Translation Engine

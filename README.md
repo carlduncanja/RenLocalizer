@@ -145,4 +145,4 @@ This project is licensed under **GPL-3.0-or-later**. See `LICENSE`.
 Open an issue or contribute. Community contributions welcome.
 
 ---
-**RenLocalizer v2.0.1** – Professional translation accelerator for Ren'Py projects.
+**RenLocalizer v2.0.3** – Professional translation accelerator for Ren'Py projects.
