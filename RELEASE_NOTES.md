@@ -53,3 +53,11 @@
 - **UI languages**: English, Turkish
 - **Themes**: 4 professional themes available
 - **Version**: 2.0.1
+
+## Version 2.0.5 - 2025-09-15
+
+### 🧹 Removal
+- **Deep-Translator removed:** The experimental `Deep-Translator` multi-engine wrapper and its UI entry were removed for stability and maintainability. Please use supported engines (Google, DeepL, Yandex, LibreTranslator).
+
+### 🧹 Removal: OPUS-MT (Argos Translate)
+- **Removed OPUS-MT (Argos Translate):** All OPUS-MT / Argos Translate integration, model download UI, and related code paths have been removed due to instability and crashes observed in production. Offline model download/dialog features related to OPUS-MT were deleted, and references in UI/locales/docs were cleaned up.

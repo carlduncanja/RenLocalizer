@@ -86,7 +86,7 @@
   "translation_error": "Translation Error",
   
   "about_title": "About RenLocalizer V2",
-  "about_content": "<h3>RenLocalizer V2</h3><p>Advanced multi-engine translation tool for Ren'Py games.</p><p><b>Features:</b></p><ul><li>Multi-engine translation support</li><li>Automatic proxy rotation</li><li>Batch processing</li><li>Modern user interface</li><li>UTF-8 Ren'Py format output</li></ul><p><b>Version:</b> 2.0.4</p><p><b>Framework:</b> {framework}</p><p>© 2025 RenLocalizer Team</p>",
+  "about_content": "<h3>RenLocalizer V2</h3><p>Advanced multi-engine translation tool for Ren'Py games.</p><p><b>Features:</b></p><ul><li>Multi-engine translation support</li><li>Automatic proxy rotation</li><li>Batch processing</li><li>Modern user interface</li><li>UTF-8 Ren'Py format output</li></ul><p><b>Version:</b> 2.0.5</p><p><b>Framework:</b> {framework}</p><p>© 2025 RenLocalizer Team</p>",
   
   "general_tab": "General",
   "translation_tab": "Translation",
@@ -130,36 +130,7 @@
   "proxy_refresh_started": "Proxy refresh started.",
   "proxy_refresh_unavailable": "Proxy refresh is currently unavailable.",
   
-  "model_download_dialog": {
-    "title": "OPUS-MT Model Download",
-    "header": "🤖 OPUS-MT Offline Translation Model",
-    "info_group": "Model Information",
-    "model_label": "<b>Model:</b> {model_name}",
-    "language_pair_label": "<b>Language Pair:</b> {language_pair}",
-    "size_label": "<b>Estimated Size:</b> ~300-500 MB",
-    "description_group": "Description",
-    "description_text": "This offline neural machine translation model will be downloaded from Hugging Face. The model is only downloaded on first use and will be used locally for subsequent translations. Internet connection is only required for the initial download.",
-    "options_group": "Options",
-    "auto_download_checkbox": "Automatically download for this language pair in the future",
-    "progress_group": "Download Status",
-    "preparing": "Preparing...",
-    "download_button": "🔽 Download and Use",
-    "cancel_button": "❌ Cancel",
-    "close_button": "✅ Close",
-    "pause_cancel_button": "⏸️ Cancel",
-    "retry_button": "🔄 Retry",
-    "loading_transformers": "Loading transformers library...",
-    "downloading_model": "Downloading model...",
-    "downloading_tokenizer": "Downloading tokenizer...",
-    "verifying_model": "Verifying model files...",
-    "model_test_success": "Model test successful!",
-    "download_complete": "✅ Download complete!",
-    "download_failed": "❌ Download failed!",
-    "model_ready": "Model successfully downloaded and ready to use.",
-    "error_prefix": "Error: {error}",
-    "transformers_not_found": "Transformers library not found. Run 'pip install transformers torch'.",
-    "model_test_failed": "Model test failed - model not working"
-  },
+    
   
   "info_dialog": {
     "title": "Program Information Center",
@@ -327,9 +298,7 @@
   "translation_engines": {
     "google": "Google Translate (WEB - Free)",
     "deepl": "DeepL (API - Key Required)",
-    "argos": "Argos Translate (OFFLINE - Neural Translation)",
-    "opus_mt": "OPUS-MT (OFFLINE - Hugging Face)",
-    "deep_translator": "Deep-Translator (MULTI-ENGINE - Free)",
+    
     "bing": "Microsoft Translator (API - Key Required)",
     "yandex": "Yandex Translate (WEB - Free)",
     "libretranslator": "LibreTranslator (API - Local/Free)"

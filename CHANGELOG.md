@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.5] - 2025-09-16
+
+### 🧹 Removal: Deep-Translator
+- **Removed Deep-Translator:** The experimental `Deep-Translator` multi-engine wrapper and its UI entry have been removed due to stability and maintenance reasons. If you relied on this engine, please switch to supported engines (Google, DeepL, Yandex, LibreTranslator).
+
+### 🧹 Removal: OPUS-MT (Argos Translate)
+- **Removed OPUS-MT (Argos Translate):** All OPUS-MT / Argos Translate integration, model download UI, and related code paths have been removed due to instability and crashes observed in production. Offline model download/dialog features related to OPUS-MT were deleted, and references in UI/locales/docs were cleaned up.
+
 ## [2.0.4] - 2025-09-15
 
 ### 🛠️ RenPy Compliance & Cleanup

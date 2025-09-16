@@ -37,7 +37,7 @@ except ImportError:
 
 from src.utils.config import ConfigManager
 from src.core.parser import RenPyParser
-from src.core.translator import TranslationManager, TranslationEngine, GoogleTranslator, DeepLTranslator, YandexTranslator, DeepTranslator, OpusMTTranslator
+from src.core.translator import TranslationManager, TranslationEngine, GoogleTranslator, DeepLTranslator, YandexTranslator
 from src.core.output_formatter import RenPyOutputFormatter
 from src.gui.translation_worker import TranslationWorker
 from src.gui.settings_dialog import SettingsDialog
@@ -67,13 +67,17 @@ class MainWindow(QMainWindow):
         self.output_formatter = RenPyOutputFormatter()
         
         # Translation worker
-        self.translation_worker: Optional[TranslationWorker] = None
-        self.worker_thread: Optional[QThread] = None
-        
+        self.translation_worker = None
+        self.worker_thread = None
+
+        # Track active model download dialogs to avoid reopening same one (unused now)
+        self._active_model_downloads = set()
+        self._recently_closed_dialogs = {}
+
         # State
-        self.current_directory: Optional[Path] = None
-        self.extracted_texts: List = []
-        self.translation_results: List = []
+        self.current_directory = None
+        self.extracted_texts = []
+        self.translation_results = []
         
         # Initialize UI
         self.init_ui()
@@ -397,9 +401,6 @@ class MainWindow(QMainWindow):
         engines = [
             (TranslationEngine.GOOGLE, self.config_manager.get_ui_text("translation_engines.google")),
             (TranslationEngine.DEEPL, self.config_manager.get_ui_text("translation_engines.deepl")),
-            # (TranslationEngine.ARGOS, self.config_manager.get_ui_text("translation_engines.argos")),  # Temporarily disabled
-            (TranslationEngine.OPUS_MT, self.config_manager.get_ui_text("translation_engines.opus_mt")),
-            (TranslationEngine.DEEP_TRANSLATOR, self.config_manager.get_ui_text("translation_engines.deep_translator")),
             (TranslationEngine.BING, self.config_manager.get_ui_text("translation_engines.bing")),
             (TranslationEngine.YANDEX, self.config_manager.get_ui_text("translation_engines.yandex")),
             (TranslationEngine.LIBRETRANSLATOR, self.config_manager.get_ui_text("translation_engines.libretranslator"))
@@ -483,23 +484,11 @@ class MainWindow(QMainWindow):
         google_translator = GoogleTranslator(proxy_manager=self.proxy_manager)
         self.translation_manager.add_translator(TranslationEngine.GOOGLE, google_translator)
         
-        # Add OPUS-MT (Hugging Face transformers) - optional
-        try:
-            opus_translator = OpusMTTranslator()
-            # Set reference to main window for download dialogs
-            opus_translator._main_window = self
-            self.translation_manager.add_translator(TranslationEngine.OPUS_MT, opus_translator)
-            self.logger.info("✅ OPUS-MT engine loaded successfully")
-        except ImportError as e:
-            self.logger.warning(f"⚠️ OPUS-MT not available: {e}")
-            self.logger.info("💡 To install: pip install transformers torch")
-        except Exception as e:
-            self.logger.warning(f"⚠️ OPUS-MT engine error: {e}")
+    # Offline engine: optional third-party engines can be added here.
         
         # Add Deep-Translator (multi-engine wrapper) - optional
         try:
-            deep_translator = DeepTranslator()
-            self.translation_manager.add_translator(TranslationEngine.DEEP_TRANSLATOR, deep_translator)
+            # Deep-Translator removed from available engines
             self.logger.info("✅ Deep-Translator engine loaded successfully")
         except ImportError as e:
             self.logger.warning(f"⚠️ Deep-Translator not available: {e}")
@@ -762,7 +751,6 @@ class MainWindow(QMainWindow):
         self.translation_worker.progress_updated.connect(self.update_progress)
         self.translation_worker.translation_completed.connect(self.on_translation_completed)
         self.translation_worker.error_occurred.connect(self.on_translation_error)
-        self.translation_worker.model_download_required.connect(self.on_model_download_required)
         self.translation_worker.finished.connect(self.on_translation_finished)
         
         # Start in thread
@@ -1190,59 +1178,7 @@ class MainWindow(QMainWindow):
             refresh_thread = threading.Thread(target=refresh_task, daemon=True)
             refresh_thread.start()
 
-    async def show_model_download_dialog(self, model_name: str, language_pair: str) -> bool:
-        """Show model download confirmation dialog in main thread."""
-        try:
-            from src.gui.model_download_dialog import ModelDownloadDialog
-            
-            # We're in an async context but need to run dialog synchronously in main thread
-            # Create dialog and run it directly since we should be in main thread already
-            dialog = ModelDownloadDialog(self, model_name, language_pair)
-            result = dialog.exec()
-            
-            # Check both dialog result and download confirmation
-            if result == dialog.DialogCode.Accepted and dialog.download_confirmed:
-                return True
-            else:
-                return False
-                
-        except Exception as e:
-            self.logger.error(f"Failed to show download dialog: {e}")
-            return False
-
-    def on_model_download_required(self, model_name: str, source_lang: str, target_lang: str):
-        """Handle model download requirement from translation worker."""
-        try:
-            from src.gui.model_download_dialog import ModelDownloadDialog
-            
-            language_pair = f"{source_lang.upper()} → {target_lang.upper()}"
-            dialog = ModelDownloadDialog(self, model_name, language_pair)
-            result = dialog.exec()
-            
-            if result == dialog.DialogCode.Accepted and dialog.download_confirmed:
-                # Model download confirmed, restart translation
-                self.logger.info(f"Model download confirmed for {model_name}")
-                
-                # Stop current worker
-                if hasattr(self, 'worker_thread') and self.worker_thread.isRunning():
-                    self.worker_thread.quit()
-                    self.worker_thread.wait()
-                
-                # Restart translation after a short delay to allow model loading
-                try:
-                    from PyQt6.QtCore import QTimer
-                except ImportError:
-                    from PySide6.QtCore import QTimer
-                    
-                QTimer.singleShot(1000, self.restart_translation_after_download)
-            else:
-                # Download cancelled
-                self.logger.info("Model download cancelled by user")
-                self.on_translation_error("Model download cancelled by user")
-                
-        except Exception as e:
-            self.logger.error(f"Error handling model download requirement: {e}")
-            self.on_translation_error(f"Model download error: {e}")
+    # OPUS-MT model download handling removed (offline OPUS engine disabled)
     
     def restart_translation_after_download(self):
         """Restart translation after model download."""

@@ -91,7 +91,7 @@ Veya Windows'ta, `run.bat` dosyasını çift tıklayabilirsiniz.
 |--------|--------|------|
 | Google | ✅ Etkin | Web istemcisi + proxy yedeği |
 | DeepL | ✅ Etkin | Yalnızca kullandığınızda API anahtarı gerekir |
-| OPUS-MT | ✅ Etkin | İndirme onayı ile çevrimdışı nöral çeviri |
+| OPUS-MT | ❌ Kaldırıldı | - | OPUS-MT yerel bağımlılık sorunları nedeniyle kaldırıldı |
 | Deep-Translator | ✅ Etkin | Çoklu motor sarmalayıcısı (Google, Bing, Yandex vb.) |
 | Bing / Microsoft | ⏳ Planlanmış | Henüz eklenmedi |
 | Yandex | ⏳ Planlanmış | Henüz eklenmedi |

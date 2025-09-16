@@ -7,12 +7,12 @@
 ## ✨ Key Features
 
 ### 🎯 Smart Translation
-- **Multiple engines**: Google Translate (web), DeepL API, OPUS-MT (offline), Deep-Translator (multi-engine) support
+- **Multiple engines**: Google Translate (web), DeepL API, Deep-Translator (multi-engine) support
 - **RenPy-aware parsing**: Correctly handles menu choices, dialogues, UI elements
 - **Conditional menu support**: Handles `"choice" if condition:` syntax
 - **Technical filtering**: Automatically excludes color codes, font files, performance metrics
 - **Character preservation**: Maintains `[character_name]` variables and placeholders
-- **Offline translation**: OPUS-MT provides high-quality neural translation without internet
+-- **Offline translation**: Offline engines may be available via third-party packages (optional)
 
 ### 🚀 High Performance  
 - **Concurrent processing**: Configurable thread count (1-256)
@@ -92,14 +92,14 @@ Or on Windows, you can double-click `run.bat`
 |--------|--------|-----------|------|
 | Google | ✅ Active | 100+ | Web client + proxy fallback |
 | DeepL | ✅ Active | 30+ | API key required only if you use it |
-| OPUS-MT | ✅ Active | 16 pairs | Offline neural MT (Helsinki-NLP models) |
+| OPUS-MT | ❌ Removed | - | Offline OPUS-MT removed due to native dependency issues |
 | Deep-Translator | ✅ Active | 100+ | Multi-engine wrapper (Google, Bing, Yandex, etc.) |
 | Bing / Microsoft | ⏳ Planned | - | Not yet added |
 | Yandex | ⏳ Planned | - | Not yet added |
 | LibreTranslator | ⏳ Planned | - | Future self-host option |
 
-### OPUS-MT Supported Languages
-English ↔ Turkish, German, French, Spanish, Italian, Russian, Japanese, Chinese, Korean, Portuguese, Arabic, Dutch, Polish, Swedish, Norwegian, Danish
+### Offline Engines
+Offline engines may support a variable set of language pairs depending on installed packages.
 
 ## 🧠 Parsing Logic
 - Excludes code blocks, label definitions, python blocks
