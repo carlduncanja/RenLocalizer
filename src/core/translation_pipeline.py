@@ -590,6 +590,11 @@ init python:
             (r"(renpy\.notify\s*\(\s*)(['\"])([^'\"]+)\2(\s*\))", 
              r'\1_(\2\3\2)\4'),
             
+            # renpy.notify("text" + str(var)) -> renpy.notify(_("text{}").format(var))
+            # Ör: renpy.notify("Dignity lost: " + str(amount))
+            (r'renpy\.notify\s*\(\s*(["\'])([^"\']+)\1\s*\+\s*str\s*\(\s*(\w+)\s*\)\s*\)',
+             r'renpy.notify(_(\1\2{}\1).format(\3))'),
+            
             # action Notify("text") veya Notify('text') -> action Notify(_("text"))
             # Ör: action Notify("Game saved!")
             (r"(Notify\s*\(\s*)(['\"])([^'\"]+)\2(\s*\))", 

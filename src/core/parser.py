@@ -212,6 +212,11 @@ class RenPyParser:
             r'^\s*(?:\$\s+)?(?:renpy\.)?[Nn]otify\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
+        # Notify with string concatenation: renpy.notify("text" + str(var))
+        self.notify_concat_re = re.compile(
+            r'(?:renpy\.)?[Nn]otify\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')\s*\+'
+        )
+        
         # Python renpy function calls: $ renpy.xxx("...")
         self.python_renpy_re = re.compile(
             r'^\s*\$\s+renpy\.[a-zA-Z_]\w*\s*\([^)]*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
@@ -284,6 +289,7 @@ class RenPyParser:
             {'regex': self.alt_text_re, 'type': 'alt_text'},
             {'regex': self.input_text_re, 'type': 'input'},
             {'regex': self.notify_re, 'type': 'notify'},
+            {'regex': self.notify_concat_re, 'type': 'notify'},  # notify with string concatenation
             {'regex': self.confirm_re, 'type': 'confirm'},
             {'regex': self.renpy_input_re, 'type': 'input'},
             # _() marked screen elements - ALWAYS translatable (check BEFORE general patterns)
@@ -635,10 +641,10 @@ class RenPyParser:
                 return False
 
         # Existing logic for .rpy and .rpym files (skip tl/)
-            rpy_files = list(search_root.glob("**/*.rpy")) + list(search_root.glob("**/*.rpym"))
-            for file_path in rpy_files:
-                if not _in_tl_folder(file_path):
-                    results[file_path] = self.extract_text_entries(file_path)
+        rpy_files = list(search_root.glob("**/*.rpy")) + list(search_root.glob("**/*.rpym"))
+        for file_path in rpy_files:
+            if not _in_tl_folder(file_path):
+                results[file_path] = self.extract_text_entries(file_path)
 
         # Logic for .json files
         json_files = [f for f in search_root.glob("**/*.json") if not _in_tl_folder(f)]
@@ -773,6 +779,10 @@ class RenPyParser:
         """
         # Normalize path to lowercase with forward slashes
         relative_path = str(file_path.relative_to(search_root)).replace('\\', '/').lower()
+
+        # CRITICAL: Exclude tl/ folder (translation files should not be source)
+        if relative_path.startswith('tl/'):
+            return True
 
         # CRITICAL: Always allow renpy/common (00layout.rpy, etc.)
         if 'renpy/common' in relative_path:
