@@ -157,15 +157,15 @@ class TranslationPipeline(QObject):
         auto_unren: bool = True,
         use_proxy: bool = False
     ):
-        """Pipeline ayarlarını yapılandır"""
+        """Pipeline ayarlarini yapilandir"""
         self.game_exe_path = game_exe_path
-        # Normalize project path: if the selected EXE is inside a 'game' folder,
+        # Normalize project path: if the selected directory is a 'game' folder,
         # prefer the parent directory as the project root to match the
         # expected structure (root/game/...)
-        candidate = os.path.dirname(game_exe_path)
+        candidate = game_exe_path
         try:
             if os.path.basename(candidate).lower() == 'game':
-                # EXE located inside <project>/game/Game.exe; use project root
+                # Directory is the game folder itself; use parent as project root
                 candidate = os.path.dirname(candidate)
                 self.log_message.emit('info', self.config.get_ui_text('pipeline_project_normalize_game'))
             elif not os.path.isdir(os.path.join(candidate, 'game')):
@@ -175,10 +175,10 @@ class TranslationPipeline(QObject):
                     candidate = parent
                     self.log_message.emit('info', self.config.get_ui_text('pipeline_project_normalize_parent'))
         except Exception:
-            # Defensive: if any error occurs, fall back to dirname
-            candidate = os.path.dirname(game_exe_path)
+            # Defensive: if any error occurs, use the path as-is
+            candidate = game_exe_path
         # If normalization adjusted the path, notify the UI via a warning
-        original = os.path.dirname(game_exe_path)
+        original = game_exe_path
         self.project_path = candidate
         if os.path.normcase(original) != os.path.normcase(candidate):
             # Emit a friendly warning to explain what's changed
@@ -233,7 +233,7 @@ class TranslationPipeline(QObject):
         # 1. Doğrulama
         self._set_stage(PipelineStage.VALIDATING, self.config.get_ui_text("stage_validating"))
         
-        if not self.game_exe_path or not os.path.isfile(self.game_exe_path):
+        if not self.game_exe_path or not os.path.isdir(self.game_exe_path):
             return PipelineResult(
                 success=False,
                 message=self.config.get_ui_text("pipeline_invalid_exe"),

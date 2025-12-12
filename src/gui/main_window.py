@@ -371,22 +371,26 @@ class MainWindow(QMainWindow):
             self.target_lang_combo.addItem(f"{name} ({code})", code)
     
     def browse_game_exe(self):
-        """Browse for game EXE file."""
-        file_path, _ = QFileDialog.getOpenFileName(
+        """Browse for game directory."""
+        dir_path = QFileDialog.getExistingDirectory(
             self,
             self.config_manager.get_ui_text("select_game_exe_title"),
-            "",
-            "Executable (*.exe);;All Files (*.*)"
+            ""
         )
         
-        if file_path:
-            self.directory_input.setText(file_path)
+        if dir_path:
+            self.directory_input.setText(dir_path)
             self.log_text.clear()
-            self._add_log("info", self.config_manager.get_ui_text("exe_selected").replace("{path}", file_path))
+            self._add_log("info", self.config_manager.get_ui_text("exe_selected").replace("{path}", dir_path))
             
-            # Proje dizinini kontrol et
-            project_dir = os.path.dirname(file_path)
+            # Check if game folder exists directly or if this IS the game folder
+            project_dir = dir_path
             game_dir = os.path.join(project_dir, 'game')
+            
+            # If selected folder is named 'game', use parent as project dir
+            if os.path.basename(dir_path).lower() == 'game':
+                project_dir = os.path.dirname(dir_path)
+                game_dir = dir_path
             
             if os.path.isdir(game_dir):
                 self._add_log("info", self.config_manager.get_ui_text("valid_renpy_project"))
@@ -427,13 +431,13 @@ class MainWindow(QMainWindow):
     
     def start_integrated_translation(self):
         """Start integrated translation pipeline."""
-        exe_path = self.directory_input.text().strip()
+        dir_path = self.directory_input.text().strip()
         
-        if not exe_path:
+        if not dir_path:
             QMessageBox.warning(self, self.config_manager.get_ui_text("warning"), self.config_manager.get_ui_text("please_select_exe"))
             return
         
-        if not os.path.isfile(exe_path):
+        if not os.path.isdir(dir_path):
             QMessageBox.warning(self, self.config_manager.get_ui_text("warning"), self.config_manager.get_ui_text("exe_not_found"))
             return
         
@@ -452,7 +456,7 @@ class MainWindow(QMainWindow):
         # Create pipeline
         self.pipeline = TranslationPipeline(self.config_manager, self.translation_manager)
         self.pipeline.configure(
-            game_exe_path=exe_path,
+            game_exe_path=dir_path,
             target_language=target_lang,
             source_language=source_lang,
             engine=engine,
