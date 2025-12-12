@@ -21,7 +21,7 @@ try:
         QProgressBar, QTextEdit, QFileDialog, QMenuBar, QStatusBar,
         QGroupBox, QCheckBox, QTabWidget, QSplitter, QTreeWidget, QTreeWidgetItem,
         QMessageBox, QDialog, QDialogButtonBox, QFormLayout, QSlider,
-        QProgressDialog
+        QProgressDialog, QListWidget, QListWidgetItem
     )
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QSize
     from PyQt6.QtGui import QFont, QIcon, QPixmap, QAction
@@ -33,7 +33,7 @@ except ImportError:
         QProgressBar, QTextEdit, QFileDialog, QMenuBar, QStatusBar,
         QGroupBox, QCheckBox, QTabWidget, QSplitter, QTreeWidget, QTreeWidgetItem,
         QMessageBox, QDialog, QDialogButtonBox, QFormLayout, QSlider,
-        QProgressDialog
+        QProgressDialog, QListWidget, QListWidgetItem
     )
     from PySide6.QtCore import Qt, QThread, Signal as pyqtSignal, QTimer, QSize
     from PySide6.QtGui import QFont, QIcon, QPixmap, QAction
@@ -269,10 +269,25 @@ class MainWindow(QMainWindow):
         self.source_lang_combo.addItem("Japanese", "ja")
         trans_layout.addRow(self.config_manager.get_ui_text("source_lang_label"), self.source_lang_combo)
 
-        # Target language - 36 dil
-        self.target_lang_combo = QComboBox()
+        # Target languages - multi-select with 36 languages
+        target_lang_widget = QWidget()
+        target_lang_layout = QVBoxLayout(target_lang_widget)
+        target_lang_layout.setContentsMargins(0, 0, 0, 0)
+        target_lang_layout.setSpacing(4)
+        
+        # Select All checkbox
+        self.select_all_langs = QCheckBox("Select All")
+        self.select_all_langs.stateChanged.connect(self._on_select_all_languages)
+        target_lang_layout.addWidget(self.select_all_langs)
+        
+        # Multi-select list
+        self.target_lang_list = QListWidget()
+        self.target_lang_list.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.target_lang_list.setMaximumHeight(150)
         self._populate_target_languages()
-        trans_layout.addRow(self.config_manager.get_ui_text("target_lang_label"), self.target_lang_combo)
+        target_lang_layout.addWidget(self.target_lang_list)
+        
+        trans_layout.addRow(self.config_manager.get_ui_text("target_lang_label"), target_lang_widget)
 
         # Translation engine
         self.engine_combo = QComboBox()
@@ -328,47 +343,63 @@ class MainWindow(QMainWindow):
         return widget
     
     def _populate_target_languages(self):
-        """Populate target language combo with 36 languages."""
-        languages = [
-            ("turkish", "Türkçe"),
+        """Populate target language list with 36 languages."""
+        self.target_languages = [
+            ("turkish", "Turkce"),
             ("english", "English"),
             ("german", "Deutsch"),
-            ("french", "Français"),
-            ("spanish", "Español"),
+            ("french", "Francais"),
+            ("spanish", "Espanol"),
             ("italian", "Italiano"),
-            ("portuguese", "Português"),
-            ("russian", "Русский"),
+            ("portuguese", "Portugues"),
+            ("russian", "Russkiy"),
             ("polish", "Polski"),
             ("dutch", "Nederlands"),
-            ("japanese", "日本語"),
-            ("korean", "한국어"),
-            ("chinese_s", "简体中文"),
-            ("chinese_t", "繁體中文"),
-            ("arabic", "العربية"),
-            ("thai", "ไทย"),
-            ("vietnamese", "Tiếng Việt"),
+            ("japanese", "Nihongo"),
+            ("korean", "Hangugeo"),
+            ("chinese_s", "Zhongwen (Simplified)"),
+            ("chinese_t", "Zhongwen (Traditional)"),
+            ("arabic", "Arabiya"),
+            ("thai", "Thai"),
+            ("vietnamese", "Tieng Viet"),
             ("indonesian", "Bahasa Indonesia"),
-            ("czech", "Čeština"),
+            ("czech", "Cestina"),
             ("danish", "Dansk"),
             ("finnish", "Suomi"),
-            ("greek", "Ελληνικά"),
-            ("hebrew", "עברית"),
-            ("hindi", "हिन्दी"),
+            ("greek", "Ellinika"),
+            ("hebrew", "Ivrit"),
+            ("hindi", "Hindi"),
             ("hungarian", "Magyar"),
             ("norwegian", "Norsk"),
-            ("romanian", "Română"),
+            ("romanian", "Romana"),
             ("swedish", "Svenska"),
-            ("ukrainian", "Українська"),
-            ("bulgarian", "Български"),
-            ("catalan", "Català"),
+            ("ukrainian", "Ukrayinska"),
+            ("bulgarian", "Balgarski"),
+            ("catalan", "Catala"),
             ("croatian", "Hrvatski"),
-            ("slovak", "Slovenčina"),
-            ("slovenian", "Slovenščina"),
-            ("serbian", "Српски"),
+            ("slovak", "Slovencina"),
+            ("slovenian", "Slovenscina"),
+            ("serbian", "Srpski"),
             ("malay", "Bahasa Melayu"),
         ]
-        for code, name in languages:
-            self.target_lang_combo.addItem(f"{name} ({code})", code)
+        for code, name in self.target_languages:
+            item = QListWidgetItem(f"{name} ({code})")
+            item.setData(Qt.ItemDataRole.UserRole, code)
+            self.target_lang_list.addItem(item)
+    
+    def _on_select_all_languages(self, state):
+        """Handle Select All checkbox state change."""
+        if state == Qt.CheckState.Checked.value:
+            self.target_lang_list.selectAll()
+        else:
+            self.target_lang_list.clearSelection()
+    
+    def _get_selected_languages(self) -> list:
+        """Get list of selected language codes."""
+        selected = []
+        for item in self.target_lang_list.selectedItems():
+            selected.append(item.data(Qt.ItemDataRole.UserRole))
+        return selected
     
     def browse_game_exe(self):
         """Browse for game directory."""
@@ -445,31 +476,17 @@ class MainWindow(QMainWindow):
         from src.core.translation_pipeline import TranslationPipeline, PipelineWorker
         
         # Get settings from config
-        target_lang = self.target_lang_combo.currentData()
+        target_langs = self._get_selected_languages()
+        if not target_langs:
+            QMessageBox.warning(self, self.config_manager.get_ui_text("warning"), "Please select at least one target language")
+            return
+        
         source_lang = self.source_lang_combo.currentData()
         engine = self.engine_combo.currentData()
         
         # UnRen ve Proxy ayarlarını config'den oku
         auto_unren = self.config_manager.app_settings.unren_auto_download
         use_proxy = getattr(self.config_manager.proxy_settings, "enabled", False)
-        
-        # Create pipeline
-        self.pipeline = TranslationPipeline(self.config_manager, self.translation_manager)
-        self.pipeline.configure(
-            game_exe_path=dir_path,
-            target_language=target_lang,
-            source_language=source_lang,
-            engine=engine,
-            auto_unren=auto_unren,
-            use_proxy=use_proxy
-        )
-        
-        # Connect signals
-        self.pipeline.stage_changed.connect(self._on_stage_changed)
-        self.pipeline.progress_updated.connect(self._on_progress_updated)
-        self.pipeline.log_message.connect(self._on_log_message)
-        self.pipeline.finished.connect(self._on_pipeline_finished)
-        self.pipeline.show_warning.connect(self._on_show_warning)
         
         # UI state
         self.start_button.setEnabled(False)
@@ -478,11 +495,18 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.log_text.clear()
         
-        self._add_log("info", self.config_manager.get_ui_text("pipeline_starting"))
+        # Store languages for sequential processing
+        self.pending_languages = target_langs.copy()
+        self.current_dir_path = dir_path
+        self.current_source_lang = source_lang
+        self.current_engine = engine
+        self.current_auto_unren = auto_unren
+        self.current_use_proxy = use_proxy
         
-        # Start worker
-        self.pipeline_worker = PipelineWorker(self.pipeline)
-        self.pipeline_worker.start()
+        self._add_log("info", f"Starting translation for {len(target_langs)} language(s): {', '.join(target_langs)}")
+        
+        # Start first language
+        self._start_next_language()
     
     def stop_integrated_translation(self):
         """Stop integrated translation pipeline."""
@@ -554,15 +578,49 @@ class MainWindow(QMainWindow):
         """Show warning popup from pipeline."""
         QMessageBox.warning(self, title, message)
     
+    def _start_next_language(self):
+        """Start translation for the next language in the queue."""
+        from src.core.translation_pipeline import TranslationPipeline, PipelineWorker
+        
+        if not hasattr(self, 'pending_languages') or not self.pending_languages:
+            # All languages done
+            self.start_button.setEnabled(True)
+            self.stop_button.setEnabled(False)
+            self.browse_button.setEnabled(True)
+            self._add_log("success", "All translations completed!")
+            return
+        
+        target_lang = self.pending_languages.pop(0)
+        remaining = len(self.pending_languages)
+        self._add_log("info", f"Processing: {target_lang} ({remaining} remaining)")
+        
+        # Create pipeline for this language
+        self.pipeline = TranslationPipeline(self.config_manager, self.translation_manager)
+        self.pipeline.configure(
+            game_exe_path=self.current_dir_path,
+            target_language=target_lang,
+            source_language=self.current_source_lang,
+            engine=self.current_engine,
+            auto_unren=self.current_auto_unren,
+            use_proxy=self.current_use_proxy
+        )
+        
+        # Connect signals
+        self.pipeline.stage_changed.connect(self._on_stage_changed)
+        self.pipeline.progress_updated.connect(self._on_progress_updated)
+        self.pipeline.log_message.connect(self._on_log_message)
+        self.pipeline.finished.connect(self._on_pipeline_finished)
+        self.pipeline.show_warning.connect(self._on_show_warning)
+        
+        # Start worker
+        self.pipeline_worker = PipelineWorker(self.pipeline)
+        self.pipeline_worker.start()
+    
     def _on_pipeline_finished(self, result):
         """Handle pipeline completion."""
-        self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
-        self.browse_button.setEnabled(True)
-        
         if result.success:
             self.progress_bar.setValue(100)
-            self._add_log("success", f"✅ {result.message}")
+            self._add_log("success", f"{result.message}")
             
             if result.stats:
                 stats = result.stats
@@ -572,23 +630,11 @@ class MainWindow(QMainWindow):
             
             if result.output_path:
                 self._add_log("info", self.config_manager.get_ui_text("output_folder").replace("{path}", result.output_path))
-            
-            QMessageBox.information(
-                self,
-                self.config_manager.get_ui_text("success"),
-                f"{result.message}\n\n{self.config_manager.get_ui_text('output_folder_label')}\n{result.output_path}"
-            )
         else:
-            self._add_log("error", f"❌ {result.message}")
+            self._add_log("error", f"Error: {result.message}")
             
             if result.error:
                 self._add_log("error", self.config_manager.get_ui_text("detail").replace("{error}", result.error))
-            
-            QMessageBox.warning(
-                self,
-                self.config_manager.get_ui_text("error"),
-                self.config_manager.get_ui_text("pipeline_failed").replace("{message}", result.message)
-            )
 
         # Ensure pipeline worker cleaned up
         try:
@@ -607,6 +653,9 @@ class MainWindow(QMainWindow):
             threading.Thread(target=lambda: asyncio.run(self.translation_manager.close_all()), daemon=True).start()
         except Exception:
             pass
+        
+        # Process next language if any
+        self._start_next_language()
     
     # Sonuç ve log panelleri artık ana pencerede gösterilmiyor.
     
@@ -775,9 +824,11 @@ class MainWindow(QMainWindow):
                 self.source_lang_combo.setCurrentIndex(i)
                 break
         
-        for i in range(self.target_lang_combo.count()):
-            if self.target_lang_combo.itemData(i) == target_lang:
-                self.target_lang_combo.setCurrentIndex(i)
+        # Select saved target language in list
+        for i in range(self.target_lang_list.count()):
+            item = self.target_lang_list.item(i)
+            if item.data(Qt.ItemDataRole.UserRole) == target_lang:
+                item.setSelected(True)
                 break
         
         # Set last directory
@@ -788,7 +839,10 @@ class MainWindow(QMainWindow):
         """Save current settings."""
         # Language settings
         self.config_manager.translation_settings.source_language = self.source_lang_combo.currentData()
-        self.config_manager.translation_settings.target_language = self.target_lang_combo.currentData()
+        # Save first selected language as default
+        selected = self._get_selected_languages()
+        if selected:
+            self.config_manager.translation_settings.target_language = selected[0]
         
         # Directory (save EXE path)
         self.config_manager.app_settings.last_input_directory = self.directory_input.text()
@@ -1285,7 +1339,8 @@ class MainWindow(QMainWindow):
         
         # Get current settings
         source_lang = self.source_lang_combo.currentData()
-        target_lang = self.target_lang_combo.currentData()
+        target_langs = self._get_selected_languages()
+        target_lang = target_langs[0] if target_langs else "english"
         engine = self.engine_combo.currentData()
         # Proxy ve concurrency ayarları artık sadece Settings diyalogundan okunuyor
         use_proxy = getattr(self.config_manager.proxy_settings, "enabled", False)
@@ -1445,7 +1500,8 @@ class MainWindow(QMainWindow):
             # Determine output directory based on project structure
             output_dir = self._determine_output_directory()
             
-            target_lang = self.target_lang_combo.currentData()
+            target_langs = self._get_selected_languages()
+            target_lang = target_langs[0] if target_langs else "english"
             selected_format = "old_new"  # Default format for legacy mode
 
             # Save with Ren'Py structure support
@@ -1575,7 +1631,8 @@ class MainWindow(QMainWindow):
         
         if output_dir:
             try:
-                target_lang = self.target_lang_combo.currentData()
+                target_langs = self._get_selected_languages()
+                target_lang = target_langs[0] if target_langs else "english"
                 selected_format = "old_new"  # Default format for legacy mode
                 
                 # Kullanıcının sonuç tablosunda yaptığı manuel düzenlemeleri uygula
