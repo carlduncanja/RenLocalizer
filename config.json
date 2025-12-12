@@ -1,7 +1,7 @@
 {
     "translation_settings": {
         "source_language": "auto",
-        "target_language": "turkish",
+        "target_language": "chinese_s",
         "max_concurrent_threads": 32,
         "request_delay": 0.1,
         "max_batch_size": 200,
@@ -42,7 +42,7 @@
         "theme": "solarized",
         "window_width": 1200,
         "window_height": 800,
-        "last_input_directory": "",
+        "last_input_directory": "/Users/swazeappllc/Desktop/Games/ct-2-game/game",
         "last_output_directory": "",
         "auto_save_settings": true,
         "auto_save_translations": true,

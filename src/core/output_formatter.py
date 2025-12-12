@@ -13,6 +13,181 @@ import re
 if TYPE_CHECKING:
     from src.core.translator import TranslationResult
 
+# Date translations for various languages (weekdays, months)
+DATE_TRANSLATIONS = {
+    "italian": {
+        "weekdays": ["Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi", "Sabato", "Domenica"],
+        "weekdays_short": ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"],
+        "months": ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", 
+                   "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"],
+        "months_short": ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"],
+        "empty_slot": "slot vuoto",
+        "page": "Pagina {}",
+        "auto_saves": "Salvataggi automatici",
+        "quick_saves": "Salvataggi rapidi",
+    },
+    "turkish": {
+        "weekdays": ["Pazartesi", "Sali", "Carsamba", "Persembe", "Cuma", "Cumartesi", "Pazar"],
+        "weekdays_short": ["Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz"],
+        "months": ["Ocak", "Subat", "Mart", "Nisan", "Mayis", "Haziran",
+                   "Temmuz", "Agustos", "Eylul", "Ekim", "Kasim", "Aralik"],
+        "months_short": ["Oca", "Sub", "Mar", "Nis", "May", "Haz", "Tem", "Agu", "Eyl", "Eki", "Kas", "Ara"],
+        "empty_slot": "bos yuva",
+        "page": "Sayfa {}",
+        "auto_saves": "Otomatik kayitlar",
+        "quick_saves": "Hizli kayitlar",
+    },
+    "chinese_s": {
+        "weekdays": ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"],
+        "weekdays_short": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
+        "months": ["一月", "二月", "三月", "四月", "五月", "六月",
+                   "七月", "八月", "九月", "十月", "十一月", "十二月"],
+        "months_short": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+        "empty_slot": "空存档位",
+        "page": "第 {} 页",
+        "auto_saves": "自动存档",
+        "quick_saves": "快速存档",
+    },
+    "chinese_t": {
+        "weekdays": ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"],
+        "weekdays_short": ["週一", "週二", "週三", "週四", "週五", "週六", "週日"],
+        "months": ["一月", "二月", "三月", "四月", "五月", "六月",
+                   "七月", "八月", "九月", "十月", "十一月", "十二月"],
+        "months_short": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+        "empty_slot": "空存檔位",
+        "page": "第 {} 頁",
+        "auto_saves": "自動存檔",
+        "quick_saves": "快速存檔",
+    },
+    "japanese": {
+        "weekdays": ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日"],
+        "weekdays_short": ["月", "火", "水", "木", "金", "土", "日"],
+        "months": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+        "months_short": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+        "empty_slot": "空きスロット",
+        "page": "ページ {}",
+        "auto_saves": "オートセーブ",
+        "quick_saves": "クイックセーブ",
+    },
+    "korean": {
+        "weekdays": ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"],
+        "weekdays_short": ["월", "화", "수", "목", "금", "토", "일"],
+        "months": ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
+        "months_short": ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
+        "empty_slot": "빈 슬롯",
+        "page": "페이지 {}",
+        "auto_saves": "자동 저장",
+        "quick_saves": "빠른 저장",
+    },
+    "german": {
+        "weekdays": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+        "weekdays_short": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+        "months": ["Januar", "Februar", "Marz", "April", "Mai", "Juni",
+                   "Juli", "August", "September", "Oktober", "November", "Dezember"],
+        "months_short": ["Jan", "Feb", "Mar", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+        "empty_slot": "leerer Slot",
+        "page": "Seite {}",
+        "auto_saves": "Automatische Speicherstande",
+        "quick_saves": "Schnellspeicher",
+    },
+    "french": {
+        "weekdays": ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"],
+        "weekdays_short": ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+        "months": ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
+                   "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"],
+        "months_short": ["Jan", "Fev", "Mar", "Avr", "Mai", "Jui", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"],
+        "empty_slot": "emplacement vide",
+        "page": "Page {}",
+        "auto_saves": "Sauvegardes automatiques",
+        "quick_saves": "Sauvegardes rapides",
+    },
+    "spanish": {
+        "weekdays": ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"],
+        "weekdays_short": ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+        "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+        "months_short": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+        "empty_slot": "ranura vacia",
+        "page": "Pagina {}",
+        "auto_saves": "Guardados automaticos",
+        "quick_saves": "Guardados rapidos",
+    },
+    "portuguese": {
+        "weekdays": ["Segunda-feira", "Terca-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sabado", "Domingo"],
+        "weekdays_short": ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"],
+        "months": ["Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+                   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"],
+        "months_short": ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+        "empty_slot": "slot vazio",
+        "page": "Pagina {}",
+        "auto_saves": "Salvamentos automaticos",
+        "quick_saves": "Salvamentos rapidos",
+    },
+    "russian": {
+        "weekdays": ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"],
+        "weekdays_short": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+        "months": ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+                   "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
+        "months_short": ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"],
+        "empty_slot": "пустой слот",
+        "page": "Страница {}",
+        "auto_saves": "Автосохранения",
+        "quick_saves": "Быстрые сохранения",
+    },
+    "polish": {
+        "weekdays": ["Poniedzialek", "Wtorek", "Sroda", "Czwartek", "Piatek", "Sobota", "Niedziela"],
+        "weekdays_short": ["Pon", "Wt", "Sr", "Czw", "Pt", "Sob", "Nd"],
+        "months": ["Styczen", "Luty", "Marzec", "Kwiecien", "Maj", "Czerwiec",
+                   "Lipiec", "Sierpien", "Wrzesien", "Pazdziernik", "Listopad", "Grudzien"],
+        "months_short": ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrz", "Paz", "Lis", "Gru"],
+        "empty_slot": "pusty slot",
+        "page": "Strona {}",
+        "auto_saves": "Autozapisy",
+        "quick_saves": "Szybkie zapisy",
+    },
+    "indonesian": {
+        "weekdays": ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"],
+        "weekdays_short": ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
+        "months": ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                   "Juli", "Agustus", "September", "Oktober", "November", "Desember"],
+        "months_short": ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+        "empty_slot": "slot kosong",
+        "page": "Halaman {}",
+        "auto_saves": "Simpan otomatis",
+        "quick_saves": "Simpan cepat",
+    },
+    "vietnamese": {
+        "weekdays": ["Thu Hai", "Thu Ba", "Thu Tu", "Thu Nam", "Thu Sau", "Thu Bay", "Chu Nhat"],
+        "weekdays_short": ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
+        "months": ["Thang 1", "Thang 2", "Thang 3", "Thang 4", "Thang 5", "Thang 6",
+                   "Thang 7", "Thang 8", "Thang 9", "Thang 10", "Thang 11", "Thang 12"],
+        "months_short": ["Th1", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7", "Th8", "Th9", "Th10", "Th11", "Th12"],
+        "empty_slot": "o trong",
+        "page": "Trang {}",
+        "auto_saves": "Luu tu dong",
+        "quick_saves": "Luu nhanh",
+    },
+    "thai": {
+        "weekdays": ["วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์", "วันอาทิตย์"],
+        "weekdays_short": ["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"],
+        "months": ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                   "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"],
+        "months_short": ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."],
+        "empty_slot": "ช่องว่าง",
+        "page": "หน้า {}",
+        "auto_saves": "บันทึกอัตโนมัติ",
+        "quick_saves": "บันทึกด่วน",
+    },
+}
+
+# English weekday/month names for translation mapping
+ENGLISH_WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+ENGLISH_WEEKDAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+ENGLISH_MONTHS = ["January", "February", "March", "April", "May", "June", 
+                  "July", "August", "September", "October", "November", "December"]
+ENGLISH_MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
 class RenPyOutputFormatter:
     """Formats translations into Ren'Py translate block format."""
     
@@ -677,5 +852,74 @@ class RenPyOutputFormatter:
             with open(init_file_path, 'w', encoding='utf-8-sig', newline='\n') as f:
                 f.write(init_content)
             self.logger.info(f"Created minimal language file: {init_file_path}")
+            
+            # Also create date translations file
+            self._create_date_translations_file(game_dir, language_code)
         except Exception as e:
             self.logger.error(f"Error creating language init file: {e}")
+    
+    def _create_date_translations_file(self, game_dir: Path, language_code: str):
+        """Create common.rpy with date/time translations for the target language."""
+        try:
+            # Check if we have translations for this language
+            if language_code not in DATE_TRANSLATIONS:
+                self.logger.info(f"No date translations available for {language_code}, skipping")
+                return
+            
+            tl_dir = game_dir / "tl" / language_code
+            tl_dir.mkdir(parents=True, exist_ok=True)
+            
+            common_file = tl_dir / "common.rpy"
+            
+            # Don't overwrite if file already exists
+            if common_file.exists():
+                self.logger.info(f"Date translations file already exists: {common_file}")
+                return
+            
+            trans = DATE_TRANSLATIONS[language_code]
+            
+            lines = [
+                f"# {language_code.title()} translations for Ren'Py common strings",
+                "# Auto-generated by RenLocalizer - Date and time formatting",
+                "",
+                f"translate {language_code} strings:",
+                "",
+                "    # Weekday names (full)",
+            ]
+            
+            # Weekdays
+            for i, (eng, loc) in enumerate(zip(ENGLISH_WEEKDAYS, trans["weekdays"])):
+                lines.append(f'    old "{{#weekday}}{eng}"')
+                lines.append(f'    new "{{#weekday}}{loc}"')
+                lines.append("")
+            
+            lines.append("    # Weekday names (short)")
+            for eng, loc in zip(ENGLISH_WEEKDAYS_SHORT, trans["weekdays_short"]):
+                lines.append(f'    old "{{#weekday_short}}{eng}"')
+                lines.append(f'    new "{{#weekday_short}}{loc}"')
+                lines.append("")
+            
+            lines.append("    # Month names (full)")
+            for eng, loc in zip(ENGLISH_MONTHS, trans["months"]):
+                lines.append(f'    old "{{#month}}{eng}"')
+                lines.append(f'    new "{{#month}}{loc}"')
+                lines.append("")
+            
+            lines.append("    # Month names (short)")
+            for eng, loc in zip(ENGLISH_MONTHS_SHORT, trans["months_short"]):
+                lines.append(f'    old "{{#month_short}}{eng}"')
+                lines.append(f'    new "{{#month_short}}{loc}"')
+                lines.append("")
+            
+            # Only date-specific translations with special tags are included
+            # Other strings like file_time may already exist in strings.rpy
+            
+            content = "\n".join(lines)
+            
+            with open(common_file, 'w', encoding='utf-8-sig', newline='\n') as f:
+                f.write(content)
+            
+            self.logger.info(f"Created date translations file: {common_file}")
+            
+        except Exception as e:
+            self.logger.error(f"Error creating date translations file: {e}")

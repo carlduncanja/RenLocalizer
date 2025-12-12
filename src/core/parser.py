@@ -81,63 +81,12 @@ class RenPyParser:
         self.python_block_re = re.compile(
             r'^\s*python\s*(?:early|hide)?\s*(?:in\s+\w+)?\s*:|^\s*init\s+(?:[-+]?\d+\s+)?python\s*(?:hide|in\s+\w+)?\s*:'
         )
-    def extract_from_csv(self, file_path: Path) -> List[Dict[str, Any]]:
-        """Extract translatable text from CSV files."""
-        entries = []
-        try:
-            import csv
-            # Ren'Py devs often use UTF-8, but sometimes Excel saves as CP1252. We try UTF-8 first.
-            try:
-                content = self._read_file_lines(file_path)
-            except Exception:
-                # Fallback to reading as generic text if helper fails
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.readlines()
-            # Re-join to parse with CSV module
-            full_text = '\n'.join(content)
-            from io import StringIO
-            f_io = StringIO(full_text)
-            # Detect dialect (separator , or ;)
-            try:
-                dialect = csv.Sniffer().sniff(full_text[:1024])
-            except csv.Error:
-                dialect = None
-            reader = csv.reader(f_io, dialect) if dialect else csv.reader(f_io)
-            for row_idx, row in enumerate(reader):
-                for col_idx, cell in enumerate(row):
-                    # Use existing smart filter
-                    # If row 0, it might be a header, but we translate it anyway if it looks like text
-                    if self._is_meaningful_data_value(cell, f"col_{col_idx}"):
-                        entries.append({
-                            'text': cell,
-                            'line_number': row_idx + 1,
-                            'context_line': f"csv:row{row_idx}_col{col_idx}",
-                            'text_type': 'string',
-                            'file_path': str(file_path)
-                        })
-        except Exception as e:
-            self.logger.error(f"CSV parsing error {file_path}: {e}")
-        return entries
-
-    def extract_from_txt(self, file_path: Path) -> List[Dict[str, Any]]:
-        """Extract translatable text from TXT files (one line = one entry)."""
-        entries = []
-        try:
-            lines = self._read_file_lines(file_path)
-            for idx, line in enumerate(lines):
-                line = line.strip()
-                if self.is_meaningful_text(line):
-                    entries.append({
-                        'text': line,
-                        'line_number': idx + 1,
-                        'context_line': f"txt:line{idx+1}",
-                        'text_type': 'string',
-                        'file_path': str(file_path)
-                    })
-        except Exception as e:
-            self.logger.error(f"TXT parsing error {file_path}: {e}")
-        return entries
-
+        
+        # Initialize all pattern definitions (moved from dead code location)
+        self._init_patterns()
+    
+    def _init_patterns(self):
+        """Initialize all regex patterns for text extraction."""
         self.char_dialog_re = re.compile(
             r'^(?P<indent>\s*)(?P<char>[A-Za-z_]\w*)\s+'
             r'(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
@@ -176,11 +125,11 @@ class RenPyParser:
         )
         
         # Special patterns for _() marked screen elements - these should ALWAYS be translated
-        # textbutton _("History") - navigation buttons
+        # textbutton _("History") - navigation buttons (may have additional attributes after)
         self.textbutton_translatable_re = re.compile(
             r"^\s*textbutton\s+_\s*\(\s*(?:[rRuUbBfF]{,2})?(?P<quote>\"(?:[^\"\\]|\\.)*\"|'(?:[^\\']|\\.)*')\s*\)"
         )
-        # text _("some text") - marked for translation
+        # text _("some text") - marked for translation (may have additional attributes like size, color after)
         self.screen_text_translatable_re = re.compile(
             r"^\s*(?:text|label|tooltip)\s+_\s*\(\s*(?:[rRuUbBfF]{,2})?(?P<quote>\"(?:[^\"\\]|\\.)*\"|'(?:[^\\']|\\.)*')\s*\)"
         )
@@ -248,119 +197,76 @@ class RenPyParser:
         # NVL mode clear text - nvl clear statement doesn't need translation, but nvl dialogue does
         # NVL character is handled same as regular character dialogue
         
-        # Side image text (for accessibility)
+        # extend statement (continuation of previous dialogue)
+        self.extend_re = re.compile(
+            r'^\s*extend\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+        )
+        
+        # side text for side images (side "...")
         self.side_text_re = re.compile(
             r'^\s*side\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
-        # vbox/hbox with text children (handled by screen_text_re)
-        
-        # Button text inside button statement
-        self.button_text_re = re.compile(
-            r'^\s*button\s*:.*?\btext\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+        # Notify action: Notify("message")
+        self.notify_re = re.compile(
+            r'^\s*(?:\$\s+)?(?:renpy\.)?[Nn]otify\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
-        # Voice statement - for dubbing/localization reference
-        # voice "audio/eileen.ogg" - extracts path for localization mapping
-        # NOTE: Voice files are handled separately for localization (audio replacement)
-        self.voice_re = re.compile(
-            r'^\s*voice\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+        # Python renpy function calls: $ renpy.xxx("...")
+        self.python_renpy_re = re.compile(
+            r'^\s*\$\s+renpy\.[a-zA-Z_]\w*\s*\([^)]*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
-        # ========== ENHANCED PATTERNS FOR BETTER COVERAGE ==========
+        # general renpy.xxx() function calls
+        self.renpy_function_re = re.compile(
+            r'^\s*renpy\.[a-zA-Z_]\w*\s*\([^)]*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+        )
         
-        # ATL (Animation and Transformation Language) text patterns
-        # text inside animation/transform blocks: text "Hello" at center
+        # gui.xxx = "..." variable assignments
+        self.gui_variable_re = re.compile(
+            r'^\s*gui\.[a-zA-Z_]\w*\s*=\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+        )
+        
+        # renpy.show_screen() and similar with string arguments
+        self.renpy_show_re = re.compile(
+            r'^\s*(?:\$\s+)?renpy\.(?:show_screen|call_screen|hide_screen)\s*\([^)]*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+        )
+        
+        # ATL text property: text "..."
         self.atl_text_re = re.compile(
-            r'^\s*text\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')\s+(?:at|with|align|xalign|yalign|pos|xpos|ypos|rotate|zoom|alpha)'
+            r'^\s*text\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')\s*$'
         )
         
-        # renpy.say() function - programmatic dialogue
-        # $ renpy.say(e, "Hello there!")
+        # renpy.say() function
         self.renpy_say_re = re.compile(
             r'^\s*(?:\$\s+)?renpy\.say\s*\([^,]*,\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
-        # Action text patterns - SetField, Call with text parameters
-        # action SetField(store, "message", _("Text"))
+        # action _("text") pattern - for action attributes with translation markers
         self.action_text_re = re.compile(
             r'^\s*action\s+.*?_\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')\s*\)'
         )
         
-        # Caption pattern for various screen elements
-        # vbar caption "Volume"
+        # caption "..." attribute
         self.caption_re = re.compile(
-            r'^\s*(?:vbar|bar|slider|viewport|scrollbar)\s+.*?\bcaption\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+            r'^\s*caption\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
-        # Frame/window title patterns
-        # frame title "Settings"
+        # frame/window title
         self.frame_title_re = re.compile(
-            r'^\s*(?:frame|window|vbox|hbox|viewport)\s+.*?\btitle\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+            r'^\s*(?:frame|window)\s+.*?title\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
         
-        # Generic _() pattern anywhere in the line (fallback for complex expressions)
-        # This catches: Function(_("text")), something(_("text")), etc.
+        # Generic _("...") translation marker anywhere in line
         self.generic_translatable_re = re.compile(
             r'_\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')\s*\)'
         )
         
-        # ========== REN'PY TRANSLATION SYSTEM PATTERNS ==========
-        # Hidden labels should be excluded from translation (label name hide:)
-        self.hidden_label_re = re.compile(
-            r'^label\s+[A-Za-z_][\w\.]*\s+hide\s*:'
-        )
-        
-        # NVL mode patterns - nvl character definitions and statements
-        # define narrator_nvl = Character(None, kind=nvl_narrator)
-        self.nvl_character_re = re.compile(
-            r'^\s*define\s+[A-Za-z_]\w*\s*=\s*Character\s*\([^)]*kind\s*=\s*nvl'
-        )
-        
-        # id clause for dialogue - e "Text" id some_identifier
-        # Used to force specific translation ID
-        self.dialogue_with_id_re = re.compile(
-            r'^(?P<indent>\s*)(?P<char>[A-Za-z_]\w*)\s+'
-            r'(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-            r'\s+id\s+(?P<id>[A-Za-z_]\w*)'
-        )
-        
-        # ========== END NEW PATTERNS ==========
-
-        self.extend_re = re.compile(
-            r'^(?P<indent>\s*)extend\s+(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-        )
-
-        self.python_renpy_re = re.compile(
-            r'^\s*\$\s+.*?(?:renpy\.)?(?:input|notify)\s*\([^)]*?(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-        )
-        self.renpy_function_re = re.compile(
-            r'^\s*(?:renpy\.)?(?:input|notify)\s*\([^)]*?(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-        )
-
-        # notify function pattern
-        self.notify_re = re.compile(
-            r'^\s*(?:\$\s+)?(?:renpy\.)?notify\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-        )
-        # Regular label definition (excludes hidden labels)
-        self.label_def_re = re.compile(r'^label\s+([A-Za-z_][\w\.]*)\s*(?!hide):')  # Negative lookahead for 'hide'
-        self.menu_def_re = re.compile(r'^menu\s*(?:"([^"]*)"|\'([^\']*)\')?:')
-        self.screen_def_re = re.compile(r'^screen\s+([A-Za-z_]\w*)')
-        self.python_block_re = re.compile(r'^(?:init(?:\s+[-+]?\d+)?\s+)?python\b.*:')
-
-        # GUI variable patterns for text extraction
-        self.gui_variable_re = re.compile(
-            r'^\s*gui\.(?:text|button|label|title|heading|caption|tooltip|confirm)(?:_[a-z_]*)?(?:\[[^\]]*\])?\s*=\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-        )
-
-        # Match renpy.show("image") pattern
-        self.renpy_show_re = re.compile(
-            r'^\s*(?:\$\s+)?renpy\.show\s*\(\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
-        )
-        
+        # layout text: text "..." layout
         self.layout_text_re = re.compile(
-            r'^\s*layout\.[a-zA-Z0-9_]+\s*=\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
+            r'^\s*(?:hbox|vbox|grid|fixed|frame|window|viewport)\s*:\s*$'
         )
+        # store.xxx = "..." variable assignments (deep scan)
         self.store_text_re = re.compile(
             r'^\s*store\.[a-zA-Z0-9_]+\s*=\s*(?P<quote>"(?:[^"\\]|\\.)*"|\'(?:[^\\\']|\\.)*\')'
         )
@@ -386,7 +292,7 @@ class RenPyParser:
             # NEW: Enhanced patterns for better coverage
             {'regex': self.atl_text_re, 'type': 'ui'},           # ATL text blocks
             {'regex': self.renpy_say_re, 'type': 'dialogue'},    # renpy.say() calls
-            {'regex': self.action_text_re, 'type': 'translatable_string'},  # action _(\"text\")
+            {'regex': self.action_text_re, 'type': 'translatable_string'},  # action _("text")
             {'regex': self.caption_re, 'type': 'ui'},            # caption attributes
             {'regex': self.frame_title_re, 'type': 'ui'},        # frame/window titles
             {'regex': self.generic_translatable_re, 'type': 'translatable_string'},  # generic _()
@@ -434,6 +340,63 @@ class RenPyParser:
         self.DATA_KEY_BLACKLIST = set(DATA_KEY_BLACKLIST)
         # Whitelist for keys that usually contain user-facing text
         self.DATA_KEY_WHITELIST = set(DATA_KEY_WHITELIST)
+
+    def extract_from_csv(self, file_path: Path) -> List[Dict[str, Any]]:
+        """Extract translatable text from CSV files."""
+        entries = []
+        try:
+            import csv
+            # Ren'Py devs often use UTF-8, but sometimes Excel saves as CP1252. We try UTF-8 first.
+            try:
+                content = self._read_file_lines(file_path)
+            except Exception:
+                # Fallback to reading as generic text if helper fails
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.readlines()
+            # Re-join to parse with CSV module
+            full_text = '\n'.join(content)
+            from io import StringIO
+            f_io = StringIO(full_text)
+            # Detect dialect (separator , or ;)
+            try:
+                dialect = csv.Sniffer().sniff(full_text[:1024])
+            except csv.Error:
+                dialect = None
+            reader = csv.reader(f_io, dialect) if dialect else csv.reader(f_io)
+            for row_idx, row in enumerate(reader):
+                for col_idx, cell in enumerate(row):
+                    # Use existing smart filter
+                    # If row 0, it might be a header, but we translate it anyway if it looks like text
+                    if self._is_meaningful_data_value(cell, f"col_{col_idx}"):
+                        entries.append({
+                            'text': cell,
+                            'line_number': row_idx + 1,
+                            'context_line': f"csv:row{row_idx}_col{col_idx}",
+                            'text_type': 'string',
+                            'file_path': str(file_path)
+                        })
+        except Exception as e:
+            self.logger.error(f"CSV parsing error {file_path}: {e}")
+        return entries
+
+    def extract_from_txt(self, file_path: Path) -> List[Dict[str, Any]]:
+        """Extract translatable text from TXT files (one line = one entry)."""
+        entries = []
+        try:
+            lines = self._read_file_lines(file_path)
+            for idx, line in enumerate(lines):
+                line = line.strip()
+                if self.is_meaningful_text(line):
+                    entries.append({
+                        'text': line,
+                        'line_number': idx + 1,
+                        'context_line': f"txt:line{idx+1}",
+                        'text_type': 'string',
+                        'file_path': str(file_path)
+                    })
+        except Exception as e:
+            self.logger.error(f"TXT parsing error {file_path}: {e}")
+        return entries
 
     def extract_translatable_text(self, file_path: Union[str, Path]) -> Set[str]:
         entries = self.extract_text_entries(file_path)
@@ -1126,7 +1089,12 @@ class RenPyParser:
             if re.search(pattern, text_lower):
                 return False
 
-        if any(ext in text_lower for ext in ['.png', '.jpg', '.mp3', '.ogg']):
+        # Skip file paths and media files
+        if any(ext in text_lower for ext in ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp3', '.ogg', '.wav', '.mp4', '.webm', '.ttf', '.otf']):
+            return False
+        
+        # Skip paths with slashes (file paths)
+        if '/' in text_strip and ' ' not in text_strip:
             return False
 
         if re.match(r'^[-+]?\d+$', text.strip()):
@@ -1233,7 +1201,16 @@ class RenPyParser:
         
         # Skip if text starts with common file path patterns
         if text_strip.startswith(('fonts/', 'images/', 'audio/', 'music/', 'sounds/', 
-                                   'gui/', 'screens/', 'script/', 'game/', 'tl/')):
+                                   'gui/', 'screens/', 'script/', 'game/', 'tl/',
+                                   'video/', 'movies/', 'sfx/', 'voice/', 'bg/',
+                                   'cg/', 'sprites/', 'characters/', 'scenes/')):
+            return False
+        
+        # Skip any path containing common asset folder names
+        asset_folders = ('/images/', '/audio/', '/music/', '/sounds/', '/fonts/', 
+                        '/gui/', '/video/', '/movies/', '/sfx/', '/voice/',
+                        '/frames/', '/scenes/', '/sprites/', '/cg/', '/bg/')
+        if any(folder in text_lower for folder in asset_folders):
             return False
         
         # Skip paths with slashes that look like file paths (no spaces)
